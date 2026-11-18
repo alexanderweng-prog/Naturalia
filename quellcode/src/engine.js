@@ -75,7 +75,7 @@ function loadChapter(id) {
   STATIONS = d.STATIONS; LEVELS = d.LEVELS; TOPIC = d.TOPIC; SIMS = d.SIMS || {};
   KEY = TOPIC.storeKey; CARD = 'Zauberbuch';
   if (!TOPIC.audio) TOPIC.audio = { dir: TOPIC.id, files: false };
-  WATTI_TIPS = (REALM.tips || []).concat(TOPIC.tips || [], ELIXA_TIPS);
+  WATTI_TIPS = (REALM.tips || []).concat(TOPIC.tips || [], BASE_TIPS);
   tipI = 0;
   state = load();
   // Ein Heldenname und eine Gilde für alle Reiche
@@ -670,8 +670,8 @@ const scStyle = nr => `--sc:var(--st-${nr})`;
 function watti(lvl, mood, cls) {
   return `<div class="watti ${cls || ''}" data-mood="${mood || 'happy'}" style="--lvl:${Math.max(14, Math.min(100, Math.round(lvl)))}%" aria-hidden="true"><div class="cap"></div><div class="body"><div class="fill"></div><div class="face"><div class="eyes"><i class="eye"></i><i class="eye"></i></div><b class="mouth"></b></div></div></div>`;
 }
-const ELIXA_TIPS = ['Erst die Schriftrolle, dann die Prüfung. Das lohnt sich.', 'Fehler sind keine Niederlage. Sie kehren zurück, bis du sie besiegst.', 'Eine Runde pro Tag hält deine Flamme am Brennen.', 'Tipp: Schau bei Aufgaben zuerst, welche Einheit gesucht ist.'];
-let WATTI_TIPS = ELIXA_TIPS;
+const BASE_TIPS = ['Erst die Schriftrolle, dann die Prüfung. Das lohnt sich.', 'Fehler sind keine Niederlage. Sie kehren zurück, bis du sie besiegst.', 'Eine Runde pro Tag hält deine Flamme am Brennen.', 'Tipp: Schau bei Aufgaben zuerst, welche Einheit gesucht ist.'];
+let WATTI_TIPS = BASE_TIPS;
 let tipI = 0;
 function introCard() {
   return `<article class="card intro" style="--i:0"><div class="tag">Der Weg der Heldin, des Helden</div>
@@ -931,8 +931,8 @@ function viewWorld() {
       <span class="tag inv">Natur und Technik · Lernwelt</span>
       <span class="tag inv">${esc(profile.nick)}</span>
     </div>
-    <div class="hero"><div class="herotxt"><div class="sigil" aria-hidden="true">\u{1F3F0}</div><h1>Naturalia</h1><p class="lead">${REALMS.length} Reiche voller Rätsel aus Natur und Technik. Wähle ein Reich, lies die Schriftrollen und bestehe die Quests.</p><p class="bubble" id="bubble" aria-live="polite"></p></div>
-      <button class="wbtn" data-act="poke" aria-label="Elixa anstupsen">${watti(Math.max(14, tot.all ? tot.passed / tot.all * 100 : 0), 'happy', 'big')}</button></div>
+    <div class="hero"><div class="herotxt"><div class="sigil" aria-hidden="true">\u{1F3F0}</div><h1>Naturalia</h1><p class="lead">${REALMS.length} Reiche voller Rätsel aus Natur und Technik. Wähle ein Reich, lies die Schriftrollen und bestehe die Quests. Watti, dein Zaubertrank, begleitet dich und liest dir die Schriftrollen vor.</p><p class="bubble" id="bubble" aria-live="polite"></p></div>
+      <button class="wbtn" data-act="poke" aria-label="Watti anstupsen">${watti(Math.max(14, tot.all ? tot.passed / tot.all * 100 : 0), 'happy', 'big')}</button></div>
     <div class="stats">
       <div class="stat"><span class="k">Heldenrang</span><span class="v">${cur.name}</span><span class="mono s">${nxt ? 'nächster bei ' + nxt.xp : 'höchster Rang'}</span></div>
       <div class="stat"><span class="k">Erfahrung</span><span class="v mono" data-count="${tot.xp}" data-suffix=" XP">${tot.xp} XP</span><span class="mono s">alle Reiche</span></div>
@@ -1149,7 +1149,7 @@ function viewHome() {
       <span class="tag inv">${REALM.code ? REALM.code.replace('_', '.') + ' · ' : ''}${esc(TOPIC.title)}</span>
     </div>
     <div class="hero"><div class="herotxt"><div class="sigil" aria-hidden="true">${REALM.icon}</div><h1 class="${REALM.name.length > 14 ? 'long' : ''}">${REALM.name}</h1><p class="lead">${REALM.lore}</p><p class="bubble" id="bubble" aria-live="polite"></p></div>
-      <button class="wbtn" data-act="poke" aria-label="Elixa anstupsen">${watti(pct, 'happy', 'big')}</button></div>
+      <button class="wbtn" data-act="poke" aria-label="Watti anstupsen">${watti(pct, 'happy', 'big')}</button></div>
     <div class="stats">
       <div class="stat"><span class="k">Rang ${lv + 1}</span><span class="v">${cur.name}</span><span class="mono s">${cur.pw}</span></div>
       <div class="stat"><span class="k">Erfahrung</span><span class="v mono" data-count="${state.xp}" data-suffix=" XP">${state.xp} XP</span><span class="mono s">${nxt ? 'bis ' + nxt.xp : 'Höchster Rang'}</span></div>

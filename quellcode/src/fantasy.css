@@ -171,7 +171,7 @@ a { color: var(--accent-text); }
 .bigstars span.on { color: var(--gold); text-shadow: 0 0 12px rgba(243, 217, 139, .9); }
 .confetti span { border-radius: 50%; width: 8px; height: 8px; box-shadow: 0 0 6px currentColor; }
 
-/* Elixa: ein lebendiges Zauberelixier. Der Füllstand zeigt den Fortschritt. */
+/* Watti: ein lebendiger Zaubertrank (Name wie in den Sprachclips). Der Füllstand zeigt den Fortschritt. */
 .watti .cap { position: relative; z-index: 1; width: calc(var(--w) * .3); height: calc(var(--w) * .24); margin-bottom: -3px; background: var(--glass); border: 3px solid var(--line); border-bottom: 0; border-radius: 3px 3px 0 0; }
 .watti .cap::before { content: ""; position: absolute; left: -5px; right: -5px; top: calc(var(--w) * -.15); height: calc(var(--w) * .16); background: #9c6a35; border: 3px solid var(--line); border-radius: 5px; }
 .watti .body { width: var(--w); height: var(--w); border-radius: 50%; background: var(--glass); box-shadow: 0 4px 0 var(--line), inset -6px -8px 0 rgba(0,0,0,.08); }
