@@ -647,7 +647,7 @@ function classCard() {
     return `<article class="card clsc" style="--i:7">
       <div class="tag">Meine Gilde</div>
       <h3>Gildenwertung (Klasse)</h3>
-      <p class="small">Gib den Klassencode ein, den du von deiner Lehrperson bekommst. Er gilt für alle Reiche. Dann siehst du die Wochenwertung deiner Gilde. Gespeichert werden nur dein Heldenname und dein Punktestand.</p>
+      <p class="small">Gib den Klassencode ein, den du von deiner Lehrperson bekommst. Er gilt für alle Reiche. Dann siehst du die Wochenwertung deiner Gilde. Gespeichert werden nur dein Spielername und dein Punktestand.</p>
       <div class="ansrow chrow"><input id="clscode" class="numin mono" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="Klassencode" aria-label="Klassencode"></div>
       ${ui.clsErr ? `<p class="errtxt" role="alert">${ui.clsErr}</p>` : ''}
       <button class="btn btn-primary block" data-act="joinclass">Der Gilde beitreten</button>

@@ -22,6 +22,15 @@ Der Fortschritt wird im Browser gespeichert (Schlüssel `halingen-nt7-5-v1` usw.
 
 **Spielstand sichern:** Unten auf der Weltkarte können die Schüler*innen ihren Spielstand als Datei (`naturalia-<Heldenname>-<Datum>.txt`) speichern oder als Code kopieren. Mit «Spielstand laden» (Datei wählen oder Code einfügen) geht es auf einem anderen Gerät weiter. Vor dem Laden zeigt die App, wessen Stand es ist, und fragt nach, weil der Fortschritt auf dem Gerät ersetzt wird. Der Code ist komprimiert, aber zum Abtippen zu lang: etwa 200 bis 900 Zeichen nach einigen Runden, bis rund 7700 Zeichen, wenn alle Reiche komplett gespielt sind. Gedacht ist er zum Kopieren und Einfügen, zum Beispiel per Mail an sich selbst. Er ist nicht verschlüsselt, nur komprimiert.
 
+## Rangliste (Gilden, Schule, Duelle)
+
+Eingeschaltet über das Supabase-Projekt «Leistungs App» (`config.js`, Schulcode `HALINGEN`). Die Kinder geben in einem Reich unter «Meine Gilde» den Klassencode ein, den du ihnen gibst (z. B. `NT8A`, 3–20 Zeichen, Buchstaben, Zahlen, Bindestrich). Der Code gilt für alle Reiche. Danach sehen sie die Wochenwertung ihrer Gilde, die Schulwertung und das Gildenduell.
+
+- Gespeichert werden nur Spielername, Klassencode, Schulcode und Punkte, pro Reich. Anmeldung anonym, ohne E-Mail.
+- Die Tabellen sind gesperrt, Zugriff nur über die Funktionen in `supabase_setup.sql`. Diese prüfen die Punkte auf Plausibilität.
+- «Gilde verlassen» löscht die eigenen Daten in allen Reichen auf dem Server.
+- **Einmalig nötig:** Im Supabase-Dashboard unter Authentication → Sign In / Providers «Allow anonymous sign-ins» einschalten.
+
 ## Ändern und neu bauen
 
 - `python3 quellcode/extract_chapters.py PFAD/ZUR/nut-lernlandkarte` holt die Kapitelinhalte neu aus der Lernlandkarte. Das ist nur nötig, wenn sich dort etwas geändert hat.
