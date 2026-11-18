@@ -8,7 +8,7 @@ create table if not exists public.players (
   user_id    uuid not null default auth.uid(),
   topic      text not null check (topic ~ '^[a-z0-9-]{2,20}$'),
   class_code text not null check (class_code ~ '^[A-Z0-9-]{3,20}$'),
-  nick       text not null check (char_length(nick) between 3 and 24),
+  nick       text not null check (char_length(nick) between 2 and 24),
   week_key   int  not null,
   week_xp    int  not null default 0 check (week_xp  between 0 and 5000),
   total_xp   int  not null default 0 check (total_xp between 0 and 100000),
@@ -26,7 +26,7 @@ create table if not exists public.challenge_results (
   topic      text not null check (topic ~ '^[a-z0-9-]{2,20}$'),
   class_code text not null check (class_code ~ '^[A-Z0-9-]{3,20}$'),
   code       text not null check (code ~ '^[A-Z0-9-]{3,20}$'),
-  nick       text not null check (char_length(nick) between 3 and 24),
+  nick       text not null check (char_length(nick) between 2 and 24),
   correct    int  not null check (correct between 0 and 6),
   seconds    int  not null check (seconds between 8 and 3600),
   created_at timestamptz not null default now(),
@@ -135,7 +135,7 @@ as $$
 $$;
 
 -- ---------- Schulinterne Wertung: Top 10 plus eigener Platz ----------
--- Nur Zufallsnamen, Klassencode und Wochenpunkte. Echte Namen werden nie gespeichert.
+-- Nur Spielername, Klassencode und Wochenpunkte. Das freiwillige Feld «Dein Name» (für den QR-Code) wird nie gespeichert.
 create or replace function public.school_leaderboard(p_topic text, p_school text, p_week int)
 returns table (rank int, nick text, class_code text, week_xp int, level int, is_me boolean, n_players int)
 language plpgsql stable security definer set search_path = ''
@@ -238,3 +238,10 @@ grant execute on function public.school_leaderboard(text, text, int)            
 grant execute on function public.class_ranking(text, text, int, text[])          to authenticated;
 grant execute on function public.class_challenge_ranking(text, text, text, text[]) to authenticated;
 grant execute on function public.leave_class(text)                                to authenticated;
+
+-- ---------- Spielernamen ab 2 Zeichen (Naturalia erlaubt z. B. «Mo») ----------
+-- Für Datenbanken, die schon mit der alten Grenze (3 Zeichen) eingerichtet wurden.
+alter table public.players drop constraint if exists players_nick_check;
+alter table public.players add constraint players_nick_check check (char_length(nick) between 2 and 24);
+alter table public.challenge_results drop constraint if exists challenge_results_nick_check;
+alter table public.challenge_results add constraint challenge_results_nick_check check (char_length(nick) between 2 and 24);
