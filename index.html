@@ -1069,6 +1069,16 @@ a { color: var(--accent-text); }
 .bossrow { display: grid; grid-template-columns: 1fr auto auto; gap: 4px var(--space-3); align-items: center; padding: var(--space-2) 0; border-top: 1px solid var(--line-soft); }
 .bossrow small { grid-column: 1 / -1; color: var(--muted); }
 
+/* Spielstand sichern */
+.savecard h3 { margin: 0 0 var(--space-2); }
+.savebtns { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-3) 0; }
+.savebtns .btn { flex: 1 1 150px; }
+.savecode { display: block; width: 100%; margin: var(--space-2) 0; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: .75rem; word-break: break-all; resize: vertical; }
+.saveload { margin-top: var(--space-2); }
+.saveload > summary { cursor: pointer; margin-bottom: var(--space-2); }
+.savecard .btn, .savecode { box-sizing: border-box; max-width: 100%; }
+.savecard label.btn { display: flex; justify-content: center; align-items: center; text-align: center; }
+
 </style>
 </head>
 <body>
@@ -13619,9 +13629,9 @@ function viewWorld() {
     ${FOG_REALMS.length ? `<details class="card fogcard"><summary><b>Nebelreiche</b> <span class="small">· noch unerforscht (${FOG_REALMS.length})</span></summary>
       <p class="small">Diese Kapitel haben noch keine Lern-App. Sobald eine entsteht, lichtet sich der Nebel.</p><ul class="foglist">${fog}</ul></details>` : ''}
     ${profile.grade !== null ? gradeCard() : ''}
+    ${saveCardHtml()}
     <footer class="foot">
       <div class="logochip"><img src="logo.png" alt="Sekundarschule Halingen"></div>
-      <p class="small"><a href="nut.html">Lernlandkarte NuT</a> · Selbsteinschätzung zu allen Kompetenzen</p>
       <p class="small">Dein Fortschritt wird nur auf diesem Gerät im Browser gespeichert. Dein Heldenname <b class="mono">${esc(profile.nick)}</b> gilt in allen Reichen.</p>
     </footer>
   </main>`;
@@ -13739,8 +13749,101 @@ function viewBossSummary() {
     <button class="btn block" data-act="world">Zur Weltkarte</button>
   </main>`;
 }
+/* ---------- Spielstand sichern und laden (Datei oder Code, ohne Anmeldung) ----------
+   Code = "NATURALIA1:" + Base64 der komprimierten Daten (deflate-raw), ohne Kompression "NATURALIA0:".
+   Enthalten sind nur das Heldenprofil und die Speicher der Reiche. */
+const SAVE_KEYS = () => [PROFILE_KEY].concat(REALMS.map(r => r.storeKey));
+const b64enc = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); return btoa(s); };
+const b64dec = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function pipeBytes(u8, stream) { return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(stream)).arrayBuffer()); }
+async function makeSaveCode() {
+  const data = {};
+  SAVE_KEYS().forEach(k => { try { const v = window.localStorage.getItem(k); if (v) data[k] = JSON.parse(v); } catch (e) { /* ignorieren */ } });
+  const raw = new TextEncoder().encode(JSON.stringify({ v: 1, at: Date.now(), data }));
+  if (typeof CompressionStream !== 'undefined') {
+    try { return 'NATURALIA1:' + b64enc(await pipeBytes(raw, new CompressionStream('deflate-raw'))); } catch (e) { /* ohne Kompression weiter */ }
+  }
+  return 'NATURALIA0:' + b64enc(raw);
+}
+async function readSaveCode(code) {
+  const m = /NATURALIA([01]):([A-Za-z0-9+/=\s]+)/.exec(String(code || ''));
+  if (!m) throw new Error('Das ist kein Naturalia-Spielstand.');
+  let bytes = b64dec(m[2].replace(/\s+/g, ''));
+  if (m[1] === '1') {
+    if (typeof DecompressionStream === 'undefined') throw new Error('Dieser Browser kann den Code nicht entpacken. Versuche es mit einem aktuellen Browser.');
+    bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw'));
+  }
+  const obj = JSON.parse(new TextDecoder().decode(bytes));
+  if (!obj || obj.v !== 1 || typeof obj.data !== 'object') throw new Error('Der Spielstand ist beschädigt.');
+  const allowed = new Set(SAVE_KEYS()), data = {};
+  Object.keys(obj.data).forEach(k => { if (allowed.has(k) && obj.data[k] && typeof obj.data[k] === 'object') data[k] = obj.data[k]; });
+  const prof = data[PROFILE_KEY] || {};
+  const realms = REALMS.filter(r => data[r.storeKey]);
+  const xp = realms.reduce((a, r) => a + (+data[r.storeKey].xp || 0), 0) + (+prof.bossXp || 0);
+  return { data, at: obj.at, nick: prof.nick || '?', xp, realms: realms.length };
+}
+function applySave(info) {
+  try {
+    SAVE_KEYS().forEach(k => window.localStorage.removeItem(k));
+    Object.keys(info.data).forEach(k => window.localStorage.setItem(k, JSON.stringify(info.data[k])));
+  } catch (e) { ui.saveMsg = 'Speichern im Browser ist hier nicht möglich.'; render('keep'); return; }
+  location.hash = ''; location.reload();
+}
+function saveCardHtml() {
+  const sv = ui.save || {};
+  const prev = sv.pending ? `<div class="fb warn"><div class="fbt">Spielstand von ${esc(sv.pending.nick)} laden?</div>
+      <div class="fbb">${sv.pending.xp} XP in ${sv.pending.realms} ${sv.pending.realms === 1 ? 'Reich' : 'Reichen'}${sv.pending.at ? ', gesichert am ' + new Date(sv.pending.at).toLocaleDateString('de-CH') : ''}. Dein jetziger Fortschritt auf diesem Gerät wird dabei ersetzt.</div>
+      <div class="savebtns"><button class="btn btn-primary" data-act="saveapply">Ja, laden</button><button class="btn" data-act="savecancel">Abbrechen</button></div></div>` : '';
+  return `<section class="card savecard"><h3>Spielstand sichern</h3>
+    <p class="small">Dein Fortschritt liegt nur in diesem Browser. Sichere ihn, damit du auf einem anderen Gerät oder nach dem Löschen des Browsers weiterspielen kannst. Eine Anmeldung braucht es nicht.</p>
+    <div class="savebtns"><button class="btn btn-primary" data-act="savefile">Als Datei speichern</button><button class="btn" data-act="savecopy">Code kopieren</button></div>
+    ${sv.code ? `<label class="small" for="savecode">Dein Code (${sv.code.length} Zeichen). Schick ihn dir zum Beispiel per Mail oder speichere ihn in einer Notiz:</label><textarea id="savecode" class="savecode mono" readonly rows="3">${esc(sv.code)}</textarea>` : ''}
+    <details class="saveload"${sv.open ? ' open' : ''}><summary><b>Spielstand laden</b></summary>
+      <p class="small">Wähle deine Spielstand-Datei oder füge den Code ein.</p>
+      <label class="btn block" for="loadfile">Datei wählen</label><input type="file" id="loadfile" accept=".txt,text/plain" hidden>
+      <textarea id="loadcode" class="savecode mono" rows="3" placeholder="NATURALIA1:…">${esc(sv.input || '')}</textarea>
+      <button class="btn block" data-act="saveread">Code prüfen</button>
+    </details>
+    <p class="small" id="savemsg" aria-live="polite">${esc(ui.saveMsg || '')}</p>
+    ${prev}</section>`;
+}
+async function saveAction(a, fromFile) {
+  ui.save = ui.save || {};
+  try {
+    if (a === 'savefile' || a === 'savecopy') {
+      const code = await makeSaveCode();
+      ui.save.code = code;
+      if (a === 'savefile') {
+        const url = URL.createObjectURL(new Blob([code + '\n'], { type: 'text/plain' }));
+        const el = document.createElement('a'), day = new Date().toISOString().slice(0, 10);
+        el.href = url; el.download = 'naturalia-' + String(profile.nick || 'held').replace(/[^A-Za-z0-9ÄÖÜäöü-]/g, '') + '-' + day + '.txt';
+        document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+        ui.saveMsg = 'Die Datei ist gespeichert (meist im Ordner «Downloads»).';
+      } else {
+        let ok = false;
+        try { if (navigator.clipboard) { await navigator.clipboard.writeText(code); ok = true; } } catch (e) { /* unten von Hand */ }
+        ui.saveMsg = ok ? 'Der Code ist kopiert. Füge ihn in eine Notiz oder Mail ein.' : 'Tippe oben ins Feld, dann ist der ganze Code markiert, und kopiere ihn.';
+      }
+    } else if (a === 'saveread') {
+      const el = $id('loadcode'); if (!fromFile && el) ui.save.input = el.value;
+      ui.save.pending = await readSaveCode(ui.save.input); ui.save.open = true; ui.saveMsg = '';
+    } else if (a === 'savecancel') { ui.save.pending = null; ui.saveMsg = ''; }
+    else if (a === 'saveapply' && ui.save.pending) { applySave(ui.save.pending); return; }
+  } catch (e) { ui.save.pending = null; ui.save.open = true; ui.saveMsg = e && e.message && /Naturalia|Browser|beschädigt/.test(e.message) ? e.message : 'Der Code ist unvollständig oder falsch kopiert.'; }
+  render('keep');
+}
+// Code-Feld: beim Antippen alles markieren, damit man es leicht von Hand kopieren kann
+document.addEventListener('focusin', e => { if (e.target && e.target.id === 'savecode') e.target.select(); });
+document.addEventListener('change', e => {
+  if (!e.target || e.target.id !== 'loadfile' || !e.target.files || !e.target.files[0]) return;
+  e.target.files[0].text().then(txt => {
+    ui.save = ui.save || {}; ui.save.input = txt.trim(); ui.save.open = true;
+    return saveAction('saveread', true);
+  }).catch(() => { ui.saveMsg = 'Die Datei konnte nicht gelesen werden.'; render('keep'); });
+});
 function goWorld(fromPop) {
   audioStop();
+  ui.save = null; ui.saveMsg = '';
   ui.screen = 'world'; R = null; L = null; ui.confirmReset = false;
   if (!fromPop) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ohne Verlauf */ } }
   render();
@@ -14171,6 +14274,7 @@ function onAct(b) {
   audioStop();
   if (a === 'grade') { profile.grade = b.dataset.g; saveProfile(); render('keep'); if (profile.grade) setTimeout(scrollMyGrp, 60); return; }
   if (a === 'tomygrp') { scrollMyGrp(); return; }
+  if (/^save/.test(a)) { saveAction(a); return; }
   if (a === 'world') goWorld();
   else if (a === 'realm') enterRealm(b.dataset.id);
   else if (a === 'boss') openBoss(b.dataset.g);
@@ -14258,6 +14362,7 @@ document.addEventListener('click', e => {
 document.addEventListener('input', e => {
   if (!e.target) return;
   if (e.target.id === 'chcode') ui.chCode = e.target.value;
+  else if (e.target.id === 'loadcode') { ui.save = ui.save || {}; ui.save.input = e.target.value; }
   else if (e.target.id === 'realname') { state.realName = profile.realName = e.target.value.slice(0, 30); save(); saveProfile(); }
 });
 document.addEventListener('keydown', e => {

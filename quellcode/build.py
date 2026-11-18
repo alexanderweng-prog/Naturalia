@@ -13,20 +13,8 @@ SITE = ROOT.parent  # die App liegt im Hauptordner des Repos
 CHAPTER_ORDER = ['nt7-1', 'nt7-2', 'nt7-3', 'nt7-4', 'nt7-5', 'nt7-6', 'nt7-7', 'nt8-1', 'nt8-2', 'nt8-3', 'nt8-4', 'nt8-5',
                  'nt9-1', 'nt9-2', 'nt9-3', 'nt9-4', 'nt9-5', 'nt9-6', 'nt9-7', 'nt9-8', 'leistung', 'motor']
 
-# Alte Einzel-Apps: leiten auf das passende Reich weiter (Lesezeichen und Links aus nut.html bleiben gültig)
-REDIRECTS = {r_page: r_id for r_page, r_id in [
-    ('7_1_Naturwissenschaften_erkunden.html', 'nt7-1'), ('7_2_Den_Koerper_analysieren.html', 'nt7-2'),
-    ('7_3_Reize_und_Sinne_untersuchen.html', 'nt7-3'), ('7_4_Bewegungen_erkunden.html', 'nt7-4'),
-    ('7_5_Energie_erkunden.html', 'nt7-5'), ('7_6_Arbeiten_im_Labor.html', 'nt7-6'),
-    ('7_7_Chemische_Reaktionen_untersuchen.html', 'nt7-7'), ('8_1_Stromkreise_untersuchen.html', 'nt8-1'),
-    ('8_2_Gewaesser_Oekosysteme_erforschen.html', 'nt8-2'), ('8_3_Funktionen_des_Koerpers_analysieren.html', 'nt8-3'),
-    ('8_4_Chemische_Reaktionen_erforschen.html', 'nt8-4'), ('8_5_Kraefte_Arbeit_und_Leistung_erforschen.html', 'nt8-5'),
-    ('9_1_Optische_Phaenomene_erkunden.html', 'nt9-1'), ('9_2_Atommodelle_nutzen.html', 'nt9-2'),
-    ('9_3_Elektronische_Schaltungen_untersuchen.html', 'nt9-3'), ('9_4_Energie_und_Leistung_erfassen.html', 'nt9-4'),
-    ('9_5_Genetik_und_Gentechnik_verstehen.html', 'nt9-5'), ('9_6_Evolution_nachvollziehen.html', 'nt9-6'),
-    ('9_7_Land_Oekosysteme_erforschen.html', 'nt9-7'), ('9_8_Stoffkreislaeufe_erkunden.html', 'nt9-8'),
-    ('leistung.html', 'leistung'), ('motor.html', 'motor'), ('lernapp.html', ''),
-]}
+# Weiterleitungen alter Dateinamen: keine mehr, Naturalia steht für sich allein.
+REDIRECTS = {}
 
 
 def read(p):
