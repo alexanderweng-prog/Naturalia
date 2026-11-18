@@ -2,7 +2,7 @@
 /* =====================================================================
    Fantasy-Thema «Naturalia»: Pergament am Tag, Sternenhimmel in der Nacht
    ===================================================================== */
-/* Optional: eigene Titelschrift. Lege z. B. Cinzel (OFL-Lizenz) als fonts/fantasy.woff2 ab.
+/* Titelschrift: Cinzel (SIL Open Font License, siehe fonts/OFL-Cinzel.txt), Latin-Zeichensatz mit Umlauten.
    Fehlt die Datei, nimmt der Browser eine Serifenschrift des Geräts. */
 @font-face { font-family: 'Naturalia Display'; src: url('fonts/fantasy.woff2') format('woff2'); font-weight: 400 900; font-display: swap; }
 :root {
@@ -199,7 +199,9 @@ a { color: var(--accent-text); }
 .mapgrp { position: absolute; left: 50%; top: var(--y); transform: translate(-50%, -50%); font: 700 .72rem var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: #6b4a22; background: rgba(251, 244, 225, .85); border: 1px dashed #8a6a3a; border-radius: 99px; padding: 1px 10px; pointer-events: none; white-space: nowrap; }
 .compass small { font: 800 .7rem var(--font-display); }
 .deco { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); font-size: 1.2rem; opacity: .55; pointer-events: none; filter: sepia(.5); }
-.mapnode { appearance: none; position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; border: 0; background: none; cursor: pointer; color: #2a1d10; font: inherit; z-index: 1; animation: rise .45s both; animation-delay: calc(var(--i, 0) * 60ms); }
+.mapnode { appearance: none; position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; border: 0; background: none; cursor: pointer; color: #2a1d10; font: inherit; z-index: 1; animation: maprise .45s both; animation-delay: calc(var(--i, 0) * 60ms); }
+/* Eigene Einblend-Animation: behält die Zentrierung (translate -50 %), sonst sitzt der Punkt versetzt neben dem Weg */
+@keyframes maprise { from { opacity: 0; transform: translate(-50%, calc(-50% + 14px)); } to { opacity: 1; transform: translate(-50%, -50%); } }
 .mn-icon { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; font-size: 1.6rem; background: radial-gradient(circle at 35% 30%, #fffaf0, color-mix(in srgb, var(--rc) 45%, #f3e3bd)); border: 3px solid #3b2a17; box-shadow: 0 3px 0 #3b2a17, 0 0 0 4px color-mix(in srgb, var(--rc) 35%, transparent); transition: transform .15s; }
 .mn-label { display: flex; flex-direction: column; align-items: center; background: rgba(251, 244, 225, .92); border: 2px solid #3b2a17; border-radius: 8px; padding: 1px 7px; line-height: 1.15; max-width: 128px; text-align: center; }
 .mn-label b { font-family: var(--font-display); font-size: .78rem; }
@@ -229,3 +231,19 @@ a { color: var(--accent-text); }
 .foglist li { margin: 4px 0; break-inside: avoid; }
 .worldmain .foot .logochip { background: #fff; border: 2px solid var(--line); border-radius: 10px; padding: 6px 10px; box-shadow: 0 2px 0 var(--line); }
 .worldmain .foot .logochip img { height: 28px; }
+
+/* Stufenwahl: Reiche anderer Stufen gedimmt, aber weiterhin anklickbar */
+.mapnode.other { opacity: .42; filter: grayscale(.7); }
+@media (hover: hover) { .mapnode.other:hover { opacity: .85; filter: none; } }
+.mapgrp.mine { background: #f3d98b; border-style: solid; color: #3b2a17; }
+.gradecard h3 { margin: 0 0 var(--space-2); }
+.gradebtns { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+.gradebtns .btn { flex: 1 1 120px; }
+.othergrades { margin-top: var(--space-4); }
+.othergrades > summary { cursor: pointer; }
+.othergrades[open] > summary { margin-bottom: var(--space-3); }
+/* Kartenbeschriftung: Cinzel ist breit, darum etwas kleiner und mit mehr Platz */
+.mn-label { max-width: 156px; }
+.mn-label b { font-size: .72rem; }
+@media (min-width: 560px) { .mn-label b { font-size: .82rem; } }
+@media (max-width: 380px) { .mn-label b { font-size: .64rem; } }

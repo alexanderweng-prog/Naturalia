@@ -118,12 +118,12 @@ const REALMS = [
 const MAP_LABELS = [];
 let MAP_SLOTS = 0.3;
 REALMS.forEach((r, i) => {
-  if (i === 0 || REALMS[i - 1].grp !== r.grp) { MAP_LABELS.push({ grp: r.grp, s: MAP_SLOTS }); MAP_SLOTS += 1.6; }
+  if (i === 0 || REALMS[i - 1].grp !== r.grp) { MAP_LABELS.push({ grp: r.grp, s: MAP_SLOTS }); MAP_SLOTS += 2; }
   r.slot = MAP_SLOTS; MAP_SLOTS += 1;
 });
 MAP_SLOTS += 0.7;
 const mapY = s => +(100 - (s + 0.5) / MAP_SLOTS * 100).toFixed(2);
-REALMS.forEach((r, i) => { r.map = [(i % 2 ? 68 : 32) + [0, 2, -2, 1, -1, 2][i % 6], mapY(r.slot)]; });
+REALMS.forEach((r, i) => { r.map = [(i % 2 ? 66 : 34) + [0, 1, -1, 1, -1, 1][i % 6], mapY(r.slot)]; });
 const RANK_PW = ['erwacht', 'lernt', 'wächst', 'beherrscht', 'lehrt andere', 'ist Legende'];
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 const REALM_GROUPS = { '7': 'Kapitel 7', '8': 'Kapitel 8', '9': 'Kapitel 9', 'x': 'Vertiefungen' };

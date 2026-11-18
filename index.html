@@ -805,7 +805,7 @@ button, a, [data-act], input, label, summary { touch-action: manipulation; -webk
 /* =====================================================================
    Fantasy-Thema «Naturalia»: Pergament am Tag, Sternenhimmel in der Nacht
    ===================================================================== */
-/* Optional: eigene Titelschrift. Lege z. B. Cinzel (OFL-Lizenz) als fonts/fantasy.woff2 ab.
+/* Titelschrift: Cinzel (SIL Open Font License, siehe fonts/OFL-Cinzel.txt), Latin-Zeichensatz mit Umlauten.
    Fehlt die Datei, nimmt der Browser eine Serifenschrift des Geräts. */
 @font-face { font-family: 'Naturalia Display'; src: url('fonts/fantasy.woff2') format('woff2'); font-weight: 400 900; font-display: swap; }
 :root {
@@ -1002,7 +1002,9 @@ a { color: var(--accent-text); }
 .mapgrp { position: absolute; left: 50%; top: var(--y); transform: translate(-50%, -50%); font: 700 .72rem var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: #6b4a22; background: rgba(251, 244, 225, .85); border: 1px dashed #8a6a3a; border-radius: 99px; padding: 1px 10px; pointer-events: none; white-space: nowrap; }
 .compass small { font: 800 .7rem var(--font-display); }
 .deco { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); font-size: 1.2rem; opacity: .55; pointer-events: none; filter: sepia(.5); }
-.mapnode { appearance: none; position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; border: 0; background: none; cursor: pointer; color: #2a1d10; font: inherit; z-index: 1; animation: rise .45s both; animation-delay: calc(var(--i, 0) * 60ms); }
+.mapnode { appearance: none; position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; border: 0; background: none; cursor: pointer; color: #2a1d10; font: inherit; z-index: 1; animation: maprise .45s both; animation-delay: calc(var(--i, 0) * 60ms); }
+/* Eigene Einblend-Animation: behält die Zentrierung (translate -50 %), sonst sitzt der Punkt versetzt neben dem Weg */
+@keyframes maprise { from { opacity: 0; transform: translate(-50%, calc(-50% + 14px)); } to { opacity: 1; transform: translate(-50%, -50%); } }
 .mn-icon { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; font-size: 1.6rem; background: radial-gradient(circle at 35% 30%, #fffaf0, color-mix(in srgb, var(--rc) 45%, #f3e3bd)); border: 3px solid #3b2a17; box-shadow: 0 3px 0 #3b2a17, 0 0 0 4px color-mix(in srgb, var(--rc) 35%, transparent); transition: transform .15s; }
 .mn-label { display: flex; flex-direction: column; align-items: center; background: rgba(251, 244, 225, .92); border: 2px solid #3b2a17; border-radius: 8px; padding: 1px 7px; line-height: 1.15; max-width: 128px; text-align: center; }
 .mn-label b { font-family: var(--font-display); font-size: .78rem; }
@@ -1032,6 +1034,22 @@ a { color: var(--accent-text); }
 .foglist li { margin: 4px 0; break-inside: avoid; }
 .worldmain .foot .logochip { background: #fff; border: 2px solid var(--line); border-radius: 10px; padding: 6px 10px; box-shadow: 0 2px 0 var(--line); }
 .worldmain .foot .logochip img { height: 28px; }
+
+/* Stufenwahl: Reiche anderer Stufen gedimmt, aber weiterhin anklickbar */
+.mapnode.other { opacity: .42; filter: grayscale(.7); }
+@media (hover: hover) { .mapnode.other:hover { opacity: .85; filter: none; } }
+.mapgrp.mine { background: #f3d98b; border-style: solid; color: #3b2a17; }
+.gradecard h3 { margin: 0 0 var(--space-2); }
+.gradebtns { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+.gradebtns .btn { flex: 1 1 120px; }
+.othergrades { margin-top: var(--space-4); }
+.othergrades > summary { cursor: pointer; }
+.othergrades[open] > summary { margin-bottom: var(--space-3); }
+/* Kartenbeschriftung: Cinzel ist breit, darum etwas kleiner und mit mehr Platz */
+.mn-label { max-width: 156px; }
+.mn-label b { font-size: .72rem; }
+@media (min-width: 560px) { .mn-label b { font-size: .82rem; } }
+@media (max-width: 380px) { .mn-label b { font-size: .64rem; } }
 
 </style>
 </head>
@@ -1202,12 +1220,12 @@ const REALMS = [
 const MAP_LABELS = [];
 let MAP_SLOTS = 0.3;
 REALMS.forEach((r, i) => {
-  if (i === 0 || REALMS[i - 1].grp !== r.grp) { MAP_LABELS.push({ grp: r.grp, s: MAP_SLOTS }); MAP_SLOTS += 1.6; }
+  if (i === 0 || REALMS[i - 1].grp !== r.grp) { MAP_LABELS.push({ grp: r.grp, s: MAP_SLOTS }); MAP_SLOTS += 2; }
   r.slot = MAP_SLOTS; MAP_SLOTS += 1;
 });
 MAP_SLOTS += 0.7;
 const mapY = s => +(100 - (s + 0.5) / MAP_SLOTS * 100).toFixed(2);
-REALMS.forEach((r, i) => { r.map = [(i % 2 ? 68 : 32) + [0, 2, -2, 1, -1, 2][i % 6], mapY(r.slot)]; });
+REALMS.forEach((r, i) => { r.map = [(i % 2 ? 66 : 34) + [0, 1, -1, 1, -1, 1][i % 6], mapY(r.slot)]; });
 const RANK_PW = ['erwacht', 'lernt', 'wächst', 'beherrscht', 'lehrt andere', 'ist Legende'];
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 const REALM_GROUPS = { '7': 'Kapitel 7', '8': 'Kapitel 8', '9': 'Kapitel 9', 'x': 'Vertiefungen' };
@@ -12662,7 +12680,7 @@ const PROFILE_KEY = 'halingen-naturalia-profil-v1';
 let profile = (() => {
   let p = null;
   try { const raw = window.localStorage.getItem(PROFILE_KEY); if (raw) p = JSON.parse(raw); } catch (e) { /* ohne Speicher */ }
-  p = Object.assign({ nick: '', classCode: '', realName: '', introDone: false, worldTrophies: {} }, p || {});
+  p = Object.assign({ nick: '', classCode: '', realName: '', introDone: false, worldTrophies: {}, grade: null }, p || {});
   if (!p.nick || !p.classCode) {
     // Bestehender Fortschritt aus den alten Einzel-Apps: Name und Klasse übernehmen
     REALMS.forEach(r => {
@@ -13439,6 +13457,20 @@ const SAGAS = [
   { id: 'legende', icon: '\u{1F451}', name: 'Lebende Legende', how: 'Erreiche 9000 XP über alle Reiche.', ok: t => t.xp >= 9000 },
   { id: 'hort', icon: '\u{1F4B0}', name: 'Drachenhort', how: 'Finde 30 Artefakte in den Reichen.', ok: t => t.tr >= 30 }
 ];
+const GRADES = ['7', '8', '9'];
+// Gehört ein Reich zur gewählten Stufe? Vertiefungen (Leistung, Motor) gelten ab der 8. Klasse.
+function mine(r) {
+  const g = profile.grade;
+  if (!g) return true;
+  return r.grp === g || (r.grp === 'x' && g !== '7');
+}
+function gradeCard() {
+  const g = profile.grade;
+  const btn = (v, lbl) => `<button class="btn${g === v ? ' btn-primary' : ''}" data-act="grade" data-g="${v}" aria-pressed="${g === v}">${lbl}</button>`;
+  return `<section class="card gradecard"><h3>${g === null ? 'Welche Klasse besuchst du?' : 'Deine Klasse'}</h3>
+    <p class="small">${g === null ? 'Dann zeigt dir die Karte zuerst die Reiche deiner Stufe. Die anderen bleiben offen, falls du vor- oder zurückblättern willst.' : 'Die Reiche deiner Stufe leuchten auf der Karte. Du kannst die Klasse jederzeit ändern.'}</p>
+    <div class="gradebtns">${GRADES.map(x => btn(x, x + '. Klasse')).join('')}${btn('', 'Alle zeigen')}</div></section>`;
+}
 function heroRank(xp) { let i = 0; HERO_RANKS.forEach((h, k) => { if (xp >= h.xp) i = k; }); return i; }
 function mapHtml(per) {
   const pts = REALMS.map(r => r.map);
@@ -13449,10 +13481,10 @@ function mapHtml(per) {
     const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
     d += ` C ${c1[0].toFixed(1)} ${c1[1].toFixed(1)}, ${c2[0].toFixed(1)} ${c2[1].toFixed(1)}, ${p2[0]} ${p2[1]}`;
   }
-  const next = per.find(x => x.st.passed < x.st.stations.length);
+  const next = per.find(x => mine(x.r) && x.st.passed < x.st.stations.length);
   const nodes = per.map((x, i) => {
     const r = x.r, st = x.st, done = st.passed === st.stations.length, started = st.rounds > 0 || Object.keys(st.lessons).length > 0;
-    const cls = done ? ' done' : started ? ' started' : '';
+    const cls = (done ? ' done' : started ? ' started' : '') + (mine(r) ? '' : ' other');
     return `<button class="mapnode${cls}${next && next.r.id === r.id ? ' nextup' : ''}" data-act="realm" data-id="${r.id}" style="--x:${r.map[0]}%;--y:${r.map[1]}%;--rc:${r.color};--i:${i}" aria-label="${esc(r.name)}: ${st.passed} von ${st.stations.length} Quests bestanden">
       <span class="mn-icon" aria-hidden="true">${r.icon}</span>
       <span class="mn-label"><b>${r.name}</b><small class="mono">${'★'.repeat(Math.min(3, Math.floor(st.starSum / 6)))}${st.passed}/${st.stations.length}</small></span>
@@ -13462,7 +13494,7 @@ function mapHtml(per) {
   const DECO = ['\u{1F332}', '\u{1F3D4}️', '\u{1F344}', '\u{1F333}', '\u{1FAA8}', '\u{1F332}', '\u{1F33E}', '\u{1F3D5}️'];
   const deco = REALMS.map((r, i) => `<span class="deco" style="--x:${i % 2 ? 7 : 93}%;--y:${r.map[1]}%" aria-hidden="true">${DECO[i % DECO.length]}</span>`).join('');
   // Regionen: eigene Zeile mit Beschriftung vor dem ersten Reich jeder Gruppe
-  const grps = MAP_LABELS.map(g => `<span class="mapgrp" style="--y:${mapY(g.s)}%">${REALM_GROUPS[g.grp]}</span>`).join('');
+  const grps = MAP_LABELS.map(g => `<span class="mapgrp${profile.grade && mine(REALMS.find(r => r.grp === g.grp)) ? ' mine' : ''}" id="grp-${g.grp}" style="--y:${mapY(g.s)}%">${REALM_GROUPS[g.grp]}</span>`).join('');
   return `<div class="worldmap" role="group" aria-label="Weltkarte von Naturalia" style="--mh:${Math.round(MAP_SLOTS * 60)}px">
     <svg class="mapsvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
       <path class="coast" d="M0 2.5 C 18 1, 30 3.5, 44 2 S 78 0.5, 100 3 L 100 0 L 0 0 Z"/>
@@ -13474,7 +13506,13 @@ function mapHtml(per) {
   </div>`;
 }
 function realmListHtml(per) {
-  return Object.keys(REALM_GROUPS).map(g => {
+  const keys = Object.keys(REALM_GROUPS);
+  if (!profile.grade) return realmGroupsHtml(per, keys);
+  const own = keys.filter(g => per.some(x => x.r.grp === g && mine(x.r))), rest = keys.filter(g => own.indexOf(g) < 0);
+  return realmGroupsHtml(per, own) + `<details class="card othergrades"><summary><b>Andere Stufen</b> <span class="small">· ${rest.map(g => REALM_GROUPS[g]).join(', ')}</span></summary>${realmGroupsHtml(per, rest)}</details>`;
+}
+function realmGroupsHtml(per, keys) {
+  return keys.map(g => {
     const items = per.filter(x => x.r.grp === g);
     if (!items.length) return '';
     return `<h3 class="grp">${REALM_GROUPS[g]}</h3><div class="path">${items.map((x, i) => {
@@ -13504,6 +13542,7 @@ function viewWorld() {
   const nSaga = SAGAS.filter(t => t.ok(tot)).length;
   const fog = FOG_REALMS.map(f => `<li><span class="mono">${f[0].replace('_', '.')}</span> ${esc(f[1])}</li>`).join('');
   const initW = ui.anim ? 0 : pct;
+  const myQ = per.filter(x => mine(x.r)).reduce((a, x) => ({ passed: a.passed + x.st.passed, all: a.all + x.st.stations.length }), { passed: 0, all: 0 });
   return `
   <header class="top worldtop">
     ${skyHtml()}
@@ -13516,12 +13555,14 @@ function viewWorld() {
     <div class="stats">
       <div class="stat"><span class="k">Heldenrang</span><span class="v">${cur.name}</span><span class="mono s">${nxt ? 'nächster bei ' + nxt.xp : 'höchster Rang'}</span></div>
       <div class="stat"><span class="k">Erfahrung</span><span class="v mono" data-count="${tot.xp}" data-suffix=" XP">${tot.xp} XP</span><span class="mono s">alle Reiche</span></div>
-      <div class="stat"><span class="k">Quests</span><span class="v mono">${tot.passed}/${tot.all}</span><span class="mono s">bestanden</span></div>
+      <div class="stat"><span class="k">Quests</span><span class="v mono">${myQ.passed}/${myQ.all}</span><span class="mono s">${profile.grade ? profile.grade + '. Klasse' : 'bestanden'}</span></div>
     </div>
     <div class="xpbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Fortschritt zum nächsten Heldenrang"><div data-w="${pct}" style="width:${initW}%"></div></div>
   </header>
   <main class="wrap worldmain">
+    ${profile.grade === null ? gradeCard() : ''}
     <div class="row"><h2>Die Weltkarte</h2><span class="small mono">${tot.tr} Artefakte</span></div>
+    ${profile.grade ? `<p class="small">Du bist in der <b>${profile.grade}. Klasse</b>. <button class="linkbtn" data-act="tomygrp">Zu meinen Reichen springen</button></p>` : ''}
     <p class="small">Tippe auf ein Reich, um es zu betreten. Der leuchtende Ort ist dein nächstes Ziel. Du darfst aber jedes Reich jederzeit besuchen.</p>
     ${mapHtml(per)}
     <div class="row"><h2>Die Reiche</h2></div>
@@ -13532,6 +13573,7 @@ function viewWorld() {
     <div class="tgrid">${sagas}</div>
     ${FOG_REALMS.length ? `<details class="card fogcard"><summary><b>Nebelreiche</b> <span class="small">· noch unerforscht (${FOG_REALMS.length})</span></summary>
       <p class="small">Diese Kapitel haben noch keine Lern-App. Sobald eine entsteht, lichtet sich der Nebel.</p><ul class="foglist">${fog}</ul></details>` : ''}
+    ${profile.grade !== null ? gradeCard() : ''}
     <footer class="foot">
       <div class="logochip"><img src="logo.png" alt="Sekundarschule Halingen"></div>
       <p class="small"><a href="nut.html">Lernlandkarte NuT</a> · Selbsteinschätzung zu allen Kompetenzen</p>
@@ -13546,6 +13588,11 @@ function enterRealm(id, push) {
   ui.screen = 'home'; ui.formulas = false; ui.confirmReset = false; ui.chErr = ''; ui.clsErr = ''; ui.bt = 'class';
   if (push !== false) { try { history.pushState({ realm: id }, '', '#reich-' + id); } catch (e) { /* ohne Verlauf */ } }
   render();
+}
+// Die Reiche einer Region liegen über ihrer Beschriftung (der Weg führt nach oben): Beschriftung unten ins Bild holen
+function scrollMyGrp() {
+  const el = $id('grp-' + profile.grade);
+  if (el && el.scrollIntoView) el.scrollIntoView({ block: 'end', behavior: reduced() ? 'auto' : 'smooth' });
 }
 function goWorld(fromPop) {
   audioStop();
@@ -13975,6 +14022,8 @@ function onAct(b) {
   if (a === 'vorlesen') { if (AUD.playing) audioStop(); else audioLesson(); return; }
   if (a === 'tonaus') { profile.audioOff = !profile.audioOff; saveProfile(); if (profile.audioOff) audioStop(); document.querySelectorAll('#tbtn').forEach(x => { x.textContent = profile.audioOff ? 'Ton aus' : 'Ton an'; }); return; }
   audioStop();
+  if (a === 'grade') { profile.grade = b.dataset.g; saveProfile(); render('keep'); if (profile.grade) setTimeout(scrollMyGrp, 60); return; }
+  if (a === 'tomygrp') { scrollMyGrp(); return; }
   if (a === 'world') goWorld();
   else if (a === 'realm') enterRealm(b.dataset.id);
   else if (a === 'goquest') { enterRealm(b.dataset.id); startLesson(b.dataset.st); }

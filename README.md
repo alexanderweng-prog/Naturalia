@@ -8,6 +8,8 @@ Naturalia als Spiel, mit allen 20 Kapiteln der NuT Lernlandkarte als Reiche, daz
 - **Inhalte aus der Lernlandkarte:** Alle Kapitel stammen aus der aktuellen Lernlandkarte, also auch die PhET-Simulationen als Zusatzkarten.
 - **Vorlesen:** Jede Schriftrolle hat «Vorlesen» mit den Sprachclips aus `audio/`. Bei richtigen Antworten kommt ein gesprochenes Lob. «Ton an/aus» gilt für alle Reiche. Leistung und Motor haben keine Sprachclips, dort liest die Browser-Stimme vor.
 - **Weltkarte:** Ein langer Weg von Kapitel 7 über 8 und 9 zu den Vertiefungen.
+- **Stufenwahl:** Beim ersten Besuch fragt die App nach der Klasse (7, 8, 9 oder alle). Die Reiche der eigenen Stufe leuchten, die anderen sind gedimmt, bleiben aber offen. Die Vertiefungen gelten ab der 8. Klasse. Die Klasse lässt sich unten auf der Weltkarte ändern.
+- **Titelschrift:** Cinzel (SIL Open Font License, `fonts/OFL-Cinzel.txt`).
 - **Heldenränge** sind an die grössere Welt angepasst (höchster Rang bei 9000 XP).
 - `pruefen.html` kennt alle Reiche.
 
