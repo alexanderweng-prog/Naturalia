@@ -115,15 +115,31 @@ const REALMS = [
 ];
 // Lage auf der Weltkarte (Prozent): der Weg führt im Zickzack von unten nach oben.
 // Jedes Reich belegt eine Zeile, vor jeder Region (Kapitel 7, 8, 9 ...) steht eine Zeile für die Beschriftung.
+// Endgegner: am Ende jeder Stufe eine gemischte Prüfung über alle Reiche dieser Stufe
+const BOSSES = {
+  '7': { grp: '7', name: 'Der Nebelgolem', icon: '\u{1F5FF}', color: '#7b6f9e',
+    lore: 'Aus dem Nebel aller sieben Reiche der 7. Klasse hat sich ein Golem geformt. Nur wer das Wissen aller Reiche verbindet, löst ihn auf.' },
+  '8': { grp: '8', name: 'Die Sturmhydra', icon: '\u{1F40D}', color: '#2f7d6d',
+    lore: 'Die Hydra hat einen Kopf für jedes Reich der 8. Klasse. Schlägst du einen ab, wartet schon der nächste.' },
+  '9': { grp: '9', name: 'Der Schattenkraken', icon: '\u{1F991}', color: '#3d3a78',
+    lore: 'Tief unter den Reichen der 9. Klasse lauert der Schattenkraken. Seine Arme reichen in jedes Thema.' }
+};
+const BOSS_Q = 12, BOSS_WIN = 9; // Fragen pro Kampf, richtige Antworten zum Sieg
+
+// Lage auf der Weltkarte (Prozent): der Weg führt im Zickzack von unten nach oben.
+// Jedes Reich belegt eine Zeile, vor jeder Region steht eine Zeile für die Beschriftung, nach der Region der Endgegner.
 const MAP_LABELS = [];
 let MAP_SLOTS = 0.3;
 REALMS.forEach((r, i) => {
   if (i === 0 || REALMS[i - 1].grp !== r.grp) { MAP_LABELS.push({ grp: r.grp, s: MAP_SLOTS }); MAP_SLOTS += 2; }
   r.slot = MAP_SLOTS; MAP_SLOTS += 1;
+  const nx = REALMS[i + 1];
+  if (BOSSES[r.grp] && (!nx || nx.grp !== r.grp)) { MAP_SLOTS += 1.2; BOSSES[r.grp].slot = MAP_SLOTS; MAP_SLOTS += 1.4; }
 });
 MAP_SLOTS += 0.7;
 const mapY = s => +(100 - (s + 0.5) / MAP_SLOTS * 100).toFixed(2);
 REALMS.forEach((r, i) => { r.map = [(i % 2 ? 66 : 34) + [0, 1, -1, 1, -1, 1][i % 6], mapY(r.slot)]; });
+Object.values(BOSSES).forEach(b => { b.map = [50, mapY(b.slot)]; });
 const RANK_PW = ['erwacht', 'lernt', 'wächst', 'beherrscht', 'lehrt andere', 'ist Legende'];
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 const REALM_GROUPS = { '7': 'Kapitel 7', '8': 'Kapitel 8', '9': 'Kapitel 9', 'x': 'Vertiefungen' };

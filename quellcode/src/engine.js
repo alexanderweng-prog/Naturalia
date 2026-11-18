@@ -237,11 +237,12 @@ function startRound(what, code) {
   ui.screen = 'round'; ui.formulas = false;
   render();
 }
+const strictMode = () => !!R && (R.mode === 'challenge' || R.mode === 'boss');
 function logFirst(q, ok) {
   if (q.retry || q.firstLogged) return;
   q.firstLogged = true;
   R.results.push({ id: q.tpl.id, ok, topic: q.tpl.topic });
-  if (!ok && R.mode !== 'challenge') R.queue.push(inst(q.tpl, true));
+  if (!ok && !strictMode()) R.queue.push(inst(q.tpl, true));
 }
 function parseNum(s) {
   s = String(s).trim().replace(/[\s\u202F\u2019']/g, '').replace(',', '.');
@@ -258,7 +259,7 @@ function answerMC(i) {
     const gain = q.retry ? 3 : 10; R.xp += gain;
     q.fb = { kind: 'good', title: q.retry ? 'Richtig. Diesmal hast du ihn besiegt.' : 'Richtig.', body: q.d.explain, xp: gain };
   } else {
-    q.fb = { kind: 'bad', title: 'Nicht ganz.', body: q.d.explain + (q.retry || R.mode === 'challenge' ? '' : '<br><br>Diese Frage kehrt am Ende der Runde zurück.') };
+    q.fb = { kind: 'bad', title: 'Nicht ganz.', body: q.d.explain + (q.retry || strictMode() ? '' : '<br><br>Diese Frage kehrt am Ende der Runde zurück.') };
   }
   render('fb');
 }
@@ -276,7 +277,7 @@ function checkNum() {
     logFirst(q, q.attempts === 0);
     const gain = q.retry ? 3 : (q.attempts === 0 ? 10 : 5); R.xp += gain;
     q.fb = { kind: 'good', title: q.attempts === 0 ? 'Richtig.' : 'Richtig im zweiten Versuch.', body: d.explain, xp: gain };
-  } else if (q.attempts === 0 && R.mode !== 'challenge') {
+  } else if (q.attempts === 0 && !strictMode()) {
     q.attempts = 1;
     logFirst(q, false);
     q.fb = { kind: 'warn', title: 'Noch nicht.', body: 'Tipp: ' + d.hint + '<br>Du hast noch einen Versuch.' };
@@ -289,7 +290,7 @@ function checkNum() {
 }
 function nextQ() {
   R.i += 1;
-  if (R.i >= R.queue.length) finishRound(); else render();
+  if (R.i >= R.queue.length) { if (R.mode === 'boss') finishBoss(); else finishRound(); } else render();
 }
 function finishRound() {
   const before = state.xp;
@@ -815,6 +816,8 @@ function worldTotals() {
     xp: a.xp + x.st.xp, passed: a.passed + x.st.passed, stars: a.stars + x.st.starSum, all: a.all + x.st.stations.length,
     tr: a.tr + x.st.trophies, started: a.started + (x.st.rounds > 0 ? 1 : 0), done: a.done + (x.st.passed === x.st.stations.length ? 1 : 0)
   }), { xp: 0, passed: 0, stars: 0, all: 0, tr: 0, started: 0, done: 0 });
+  tot.xp += profile.bossXp || 0;
+  tot.bosses = Object.keys(BOSSES).filter(g => bossRec(g).won).length;
   return { per, tot };
 }
 const SAGAS = [
@@ -825,6 +828,7 @@ const SAGAS = [
   { id: 'sterne', icon: '\u{1F31F}', name: 'Sternensammler', how: 'Sammle insgesamt 30 Sterne.', ok: t => t.stars >= 30 },
   { id: 'tausend', icon: '✨', name: 'Tausend Funken', how: 'Erreiche 1000 XP über alle Reiche.', ok: t => t.xp >= 1000 },
   { id: 'legende', icon: '\u{1F451}', name: 'Lebende Legende', how: 'Erreiche 9000 XP über alle Reiche.', ok: t => t.xp >= 9000 },
+  { id: 'bezwinger', icon: '\u{2694}️', name: 'Bezwinger', how: 'Besiege einen Endgegner.', ok: t => t.bosses >= 1 },
   { id: 'hort', icon: '\u{1F4B0}', name: 'Drachenhort', how: 'Finde 30 Artefakte in den Reichen.', ok: t => t.tr >= 30 }
 ];
 const GRADES = ['7', '8', '9'];
@@ -843,7 +847,7 @@ function gradeCard() {
 }
 function heroRank(xp) { let i = 0; HERO_RANKS.forEach((h, k) => { if (xp >= h.xp) i = k; }); return i; }
 function mapHtml(per) {
-  const pts = REALMS.map(r => r.map);
+  const pts = REALMS.map(r => ({ s: r.slot, p: r.map })).concat(Object.values(BOSSES).map(b => ({ s: b.slot, p: b.map }))).sort((a, b) => a.s - b.s).map(x => x.p);
   // Weg durch alle Reiche: Catmull-Rom als Bézierkurve
   let d = `M ${pts[0][0]} ${pts[0][1]}`;
   for (let i = 0; i < pts.length - 1; i++) {
@@ -865,6 +869,13 @@ function mapHtml(per) {
   const deco = REALMS.map((r, i) => `<span class="deco" style="--x:${i % 2 ? 7 : 93}%;--y:${r.map[1]}%" aria-hidden="true">${DECO[i % DECO.length]}</span>`).join('');
   // Regionen: eigene Zeile mit Beschriftung vor dem ersten Reich jeder Gruppe
   const grps = MAP_LABELS.map(g => `<span class="mapgrp${profile.grade && mine(REALMS.find(r => r.grp === g.grp)) ? ' mine' : ''}" id="grp-${g.grp}" style="--y:${mapY(g.s)}%">${REALM_GROUPS[g.grp]}</span>`).join('');
+  const bosses = Object.values(BOSSES).map(b => {
+    const rec = bossRec(b.grp);
+    return `<button class="mapnode boss${rec.won ? ' done' : ''}${profile.grade && profile.grade !== b.grp ? ' other' : ''}" data-act="boss" data-g="${b.grp}" style="--x:${b.map[0]}%;--y:${b.map[1]}%;--rc:${b.color};--i:${REALMS.length}" aria-label="Endgegner ${esc(b.name)}${rec.won ? ', besiegt' : ''}">
+      <span class="mn-icon" aria-hidden="true">${b.icon}</span>
+      <span class="mn-label"><b>${b.name}</b><small class="mono">${rec.won ? 'besiegt · ' + rec.best + '/' + BOSS_Q : 'Endgegner'}</small></span>
+    </button>`;
+  }).join('');
   return `<div class="worldmap" role="group" aria-label="Weltkarte von Naturalia" style="--mh:${Math.round(MAP_SLOTS * 60)}px">
     <svg class="mapsvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
       <path class="coast" d="M0 2.5 C 18 1, 30 3.5, 44 2 S 78 0.5, 100 3 L 100 0 L 0 0 Z"/>
@@ -872,7 +883,7 @@ function mapHtml(per) {
     </svg>
     <span class="compass" aria-hidden="true">✦<small>N</small></span>
     ${deco}${grps}
-    ${nodes}
+    ${nodes}${bosses}
   </div>`;
 }
 function realmListHtml(per) {
@@ -901,7 +912,7 @@ function realmGroupsHtml(per, keys) {
           <button class="btn btn-primary block" data-act="realm" data-id="${r.id}">${st.rounds ? 'Ins Reich zurückkehren' : 'Reich betreten'}</button>
         </div>
       </details>`;
-    }).join('')}</div>`;
+    }).join('')}${BOSSES[g] ? bossCardHtml(BOSSES[g]) : ''}</div>`;
   }).join('');
 }
 function viewWorld() {
@@ -963,6 +974,106 @@ function enterRealm(id, push) {
 function scrollMyGrp() {
   const el = $id('grp-' + profile.grade);
   if (el && el.scrollIntoView) el.scrollIntoView({ block: 'end', behavior: reduced() ? 'auto' : 'smooth' });
+}
+/* ---------- Endgegner: gemischte Prüfung über alle Reiche einer Stufe ---------- */
+function bossRec(g) { return Object.assign({ best: 0, won: false, tries: 0 }, (profile.bosses || {})[g] || {}); }
+function bossRealms(g) { return REALMS.filter(r => r.grp === g); }
+// Fragen gleichmässig über die Reiche verteilen, je Reich aus verschiedenen Quests
+function buildBoss(g) {
+  const realms = shuffle(bossRealms(g)), picks = [], used = new Set();
+  for (let k = 0; picks.length < BOSS_Q && k < BOSS_Q * 4; k++) {
+    const r = realms[k % realms.length], sts = chapterData(r.id).STATIONS;
+    const st = sts[Math.floor(Math.random() * sts.length)];
+    const pool = st.items.filter(tp => !used.has(tp.id));
+    if (!pool.length) continue;
+    const tp = rnd(pool); used.add(tp.id);
+    const q = inst(tp); q.realm = r; picks.push(q);
+  }
+  return shuffle(picks);
+}
+function openBoss(g, push) {
+  if (!BOSSES[g]) return;
+  audioStop();
+  ui.boss = g; ui.screen = 'boss'; R = null; L = null;
+  if (push !== false) { try { history.pushState({ boss: g }, '', '#boss-' + g); } catch (e) { /* ohne Verlauf */ } }
+  render();
+}
+function startBoss(g) {
+  R = { mode: 'boss', grp: g, st: null, queue: buildBoss(g), i: 0, results: [], xp: 0, base: BOSS_Q };
+  ui.screen = 'round'; ui.formulas = false;
+  render();
+}
+// Lebensbalken des Endgegners: jede richtige Antwort trifft
+function bossBar() {
+  const b = BOSSES[R.grp], hits = R.results.filter(x => x.ok).length, hp = Math.max(0, BOSS_WIN - hits);
+  return `<div class="bossbar" role="img" aria-label="${esc(b.name)}: noch ${hp} von ${BOSS_WIN} Lebenspunkten"><span class="bb-icon" aria-hidden="true">${b.icon}</span><div class="bb-track"><div style="width:${Math.round(hp / BOSS_WIN * 100)}%"></div></div><span class="mono small">${hp}/${BOSS_WIN}</span></div>`;
+}
+function finishBoss() {
+  const g = R.grp, b = BOSSES[g];
+  const c = R.results.filter(x => x.ok).length, won = c >= BOSS_WIN;
+  const prev = bossRec(g), firstWin = won && !prev.won;
+  const bonus = firstWin ? 50 : won ? 10 : 0, gained = R.xp + bonus;
+  profile.bosses = profile.bosses || {};
+  profile.bosses[g] = { best: Math.max(prev.best, c), won: prev.won || won, tries: prev.tries + 1 };
+  profile.bossXp = (profile.bossXp || 0) + gained;
+  saveProfile();
+  // Auswertung pro Reich
+  const by = {};
+  // Im strengen Modus gibt es pro Frage genau ein Ergebnis, in derselben Reihenfolge wie die Fragen
+  R.queue.forEach((q, i) => {
+    const res = R.results[i]; if (!res) return;
+    const e = by[q.realm.id] = by[q.realm.id] || { r: q.realm, ok: 0, n: 0, topics: [] };
+    e.n++; if (res.ok) e.ok++; else e.topics.push(res.topic);
+  });
+  R.summary = { c, won, firstWin, bonus, gained, best: profile.bosses[g].best, rows: Object.values(by).sort((x, y) => (x.ok / x.n) - (y.ok / y.n)) };
+  ui.screen = 'bosssum';
+  render();
+}
+function bossCardHtml(b) {
+  const rec = bossRec(b.grp);
+  return `<div class="card bosscard" style="--sc:${b.color}"><div class="bc-head"><span class="bc-icon" aria-hidden="true">${b.icon}</span><div><span class="tag">Endgegner · ${REALM_GROUPS[b.grp]}</span><div class="btitle">${b.name}</div></div></div>
+    <p class="small">${rec.won ? `Besiegt. Bestes Ergebnis: <b class="mono">${rec.best}/${BOSS_Q}</b>.` : rec.tries ? `Noch nicht besiegt. Bestes Ergebnis: <b class="mono">${rec.best}/${BOSS_Q}</b>.` : `${BOSS_Q} gemischte Fragen aus allen Reichen der ${b.grp}. Klasse.`}</p>
+    <button class="btn ${rec.won ? '' : 'btn-primary '}block" data-act="boss" data-g="${b.grp}">${rec.won ? 'Nochmals kämpfen' : 'Zum Endgegner'}</button></div>`;
+}
+function viewBoss() {
+  const b = BOSSES[ui.boss], rec = bossRec(ui.boss), realms = bossRealms(ui.boss);
+  const per = realms.map(r => realmStats(r)), passed = per.reduce((a, s) => a + s.passed, 0), all = per.reduce((a, s) => a + s.stations.length, 0);
+  return `
+  <main class="wrap summary bossview">
+    <div class="rtop"><button class="btn sm" data-act="world">Zur Weltkarte</button><span class="mono small">${REALM_GROUPS[ui.boss]}</span></div>
+    <section class="card" style="--sc:${b.color}">
+      <div class="bossbig" aria-hidden="true">${b.icon}</div>
+      <div class="tag">Endgegner · ${REALM_GROUPS[ui.boss]}</div>
+      <h2 class="sumh">${b.name}</h2>
+      <p class="lead2"><i>${b.lore}</i></p>
+      <ul class="bossrules">
+        <li><b>${BOSS_Q} Fragen</b> aus allen ${realms.length} Reichen der ${ui.boss}. Klasse, bunt gemischt.</li>
+        <li><b>Ein Versuch</b> pro Frage, kein Zauberbuch.</li>
+        <li>Mit <b>${BOSS_WIN} richtigen Antworten</b> ist ${b.name.replace(/^(Der|Die|Das) /, m => m.toLowerCase())} besiegt.</li>
+        <li>Am Ende siehst du, welche Reiche du nochmals besuchen solltest.</li>
+      </ul>
+      <p class="small">Deine Quests in dieser Stufe: <b class="mono">${passed}/${all}</b> bestanden.${passed < all / 2 ? ' Tipp: Mit mehr bestandenen Quests hast du bessere Chancen. Kämpfen darfst du trotzdem jederzeit.' : ''}</p>
+      ${rec.tries ? `<p class="small">${rec.won ? 'Schon besiegt.' : 'Noch nicht besiegt.'} Bestes Ergebnis: <b class="mono">${rec.best}/${BOSS_Q}</b> · ${rec.tries} ${rec.tries === 1 ? 'Kampf' : 'Kämpfe'}</p>` : ''}
+    </section>
+    <button class="btn btn-primary block" data-act="bossgo">Kampf beginnen</button>
+  </main>`;
+}
+function viewBossSummary() {
+  const s = R.summary, b = BOSSES[R.grp];
+  const rows = s.rows.map(x => `<li class="bossrow"><span>${x.r.icon} <b>${x.r.name}</b></span><span class="mono">${x.ok}/${x.n}</span>${x.ok < x.n ? `<button class="linkbtn" data-act="realm" data-id="${x.r.id}">Reich besuchen</button>` : '<span class="small">sitzt</span>'}${x.topics.length ? `<small>${[...new Set(x.topics)].join(', ')}</small>` : ''}</li>`).join('');
+  return `
+  <main class="wrap summary">
+    <section class="card" style="--sc:${b.color}">
+      <div class="bossbig${s.won ? ' beaten' : ''}" aria-hidden="true">${b.icon}</div>
+      <div class="tag">Endgegner · ${REALM_GROUPS[R.grp]}</div>
+      <h2 class="sumh">${s.won ? b.name + ' ist besiegt.' : b.name + ' hat dich zurückgeschlagen.'}</h2>
+      <p class="lead2"><span class="mono b">${s.c} von ${BOSS_Q}</span> richtig. ${s.won ? (s.firstWin ? 'Zum ersten Mal besiegt!' : 'Wieder gewonnen.') : `Für den Sieg brauchst du ${BOSS_WIN}.`}</p>
+      <div class="gain"><span class="mono b">+${s.gained} XP</span><span class="small">${s.bonus ? `davon ${s.bonus} Bonus` : 'zählen für deinen Heldenrang'}</span></div>
+      <div class="miss"><div class="tag">So lief es in den Reichen</div><ul class="bossrows">${rows}</ul></div>
+    </section>
+    <button class="btn btn-primary block" data-act="bossgo">${s.won ? 'Nochmals kämpfen' : 'Neuer Versuch'}</button>
+    <button class="btn block" data-act="world">Zur Weltkarte</button>
+  </main>`;
 }
 function goWorld(fromPop) {
   audioStop();
@@ -1066,7 +1177,7 @@ function viewRound() {
   const q = R.queue[R.i], d = q.d;
   const last = R.i === R.queue.length - 1;
   const pct = Math.round(R.i / R.queue.length * 100);
-  const label = R.mode === 'review' ? 'Erinnerungsquelle' : R.mode === 'challenge' ? 'Duell \u00B7 ' + R.code : `Quest ${R.st.nr} \u00B7 ${R.st.title}`;
+  const label = R.mode === 'review' ? 'Erinnerungsquelle' : R.mode === 'challenge' ? 'Duell \u00B7 ' + R.code : R.mode === 'boss' ? `${q.realm.icon} ${q.realm.name}` : `Quest ${R.st.nr} \u00B7 ${R.st.title}`;
   let body = '';
   if (d.type === 'mc') {
     body = `<div class="opts" role="group" aria-label="Antworten">` + d.shown.map((o, i) => {
@@ -1081,7 +1192,7 @@ function viewRound() {
       <p class="small">Dezimalzahlen mit Komma oder Punkt.</p>
       ${q.done ? '' : `<button class="btn btn-primary block" data-act="check">${q.attempts ? 'Nochmals prüfen' : 'Prüfen'}</button>`}`;
   }
-  const canExplain = q.fb && (q.fb.kind === 'bad' || q.fb.kind === 'warn') && q.fb.title !== 'Gib eine Zahl ein.' && R.mode !== 'challenge' && q.tpl.learn;
+  const canExplain = q.fb && (q.fb.kind === 'bad' || q.fb.kind === 'warn') && q.fb.title !== 'Gib eine Zahl ein.' && !strictMode() && q.tpl.learn;
   const fb = q.fb ? `<div class="fb ${q.fb.kind}" role="status" aria-live="polite">${q.fb.xp ? `<span class="xppop">+${q.fb.xp} XP</span>` : ''}<div class="fbt">${q.fb.title}</div><div class="fbb">${q.fb.body}</div>${canExplain ? '<button class="btn sm fbx" data-act="explain">Erklärung ansehen</button>' : ''}</div>` : '';
   const mood = !q.fb ? 'happy' : q.fb.kind === 'good' ? 'cheer' : q.fb.kind === 'bad' ? 'sad' : 'think';
   const nxt = q.done ? `<button class="btn btn-primary block" data-act="next">${last ? 'Ergebnis ansehen' : 'Weiter'}</button>` : '';
@@ -1090,14 +1201,15 @@ function viewRound() {
     <div class="rtop">
       <button class="btn sm" data-act="quit">Rückzug</button>
       <span class="mono small">Frage ${Math.min(R.i + 1, R.queue.length)} von ${R.queue.length}</span>
-      ${TOPIC.audio ? `<button class="btn sm" id="tbtn" data-act="tonaus">${profile.audioOff ? 'Ton aus' : 'Ton an'}</button>` : ''}
-      <button class="btn sm" data-act="formulas">${ui.formulas ? CARD + ' zu' : CARD}</button>
+      ${TOPIC.audio || R.mode === 'boss' ? `<button class="btn sm" id="tbtn" data-act="tonaus">${profile.audioOff ? 'Ton aus' : 'Ton an'}</button>` : ''}
+      ${R.mode === 'boss' ? '' : `<button class="btn sm" data-act="formulas">${ui.formulas ? CARD + ' zu' : CARD}</button>`}
     </div>
     <div class="xpbar light" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Fortschritt in dieser Runde"><div style="width:${pct}%"></div></div>
+    ${R.mode === 'boss' ? bossBar() : ''}
     ${ui.formulas ? formulaCard() : ''}
-    <section class="card qcard" style="${R.st ? scStyle(R.st.nr) : '--sc:var(--primary)'}">
+    <section class="card qcard" style="${R.mode === 'boss' ? '--sc:' + q.realm.color : R.st ? scStyle(R.st.nr) : '--sc:var(--primary)'}">
       ${watti(pct, mood, 'mini')}
-      <div class="tags"><span class="tag">${label}</span>${d.type === 'num' && q.tpl.ext ? '<span class="badge">Erweiterung</span>' : ''}${q.retry ? '<span class="badge warn">Zweiter Anlauf</span>' : ''}${R.mode === 'challenge' ? '<span class="badge warn">Sanduhr läuft, 1 Versuch</span>' : ''}</div>
+      <div class="tags"><span class="tag">${label}</span>${d.type === 'num' && q.tpl.ext ? '<span class="badge">Erweiterung</span>' : ''}${q.retry ? '<span class="badge warn">Zweiter Anlauf</span>' : ''}${R.mode === 'challenge' ? '<span class="badge warn">Sanduhr läuft, 1 Versuch</span>' : ''}${R.mode === 'boss' ? '<span class="badge warn">Endgegner, 1 Versuch</span>' : ''}</div>
       <h2 class="q">${d.q}</h2>
       ${body}
     </section>
@@ -1248,6 +1360,7 @@ function afterRender() {
     const c = L.st.lesson[L.i];
     if (c.sim) { const host = $id('sim'); if (host && c.sim === 'phet') phetSim(host, c); else if (host && SIMS[c.sim]) SIMS[c.sim](host); }
   }
+  if (ui.screen === 'bosssum' && ui.anim && R && R.summary && R.summary.won) confetti(document.querySelector('.summary .card'));
   if (ui.screen === 'summary' && ui.anim && R && R.summary) {
     const s = R.summary;
     if ((R.mode === 'station' && s.stars === 3) || (R.mode === 'challenge' && s.c === 6) || s.levelUp !== null) confetti(document.querySelector('.summary .card'));
@@ -1342,7 +1455,7 @@ function audioLesson() {
   else audioPlay(null, text);
 }
 function audioPraise() {
-  if (!TOPIC.audio || profile.audioOff || ui.screen !== 'round' || !R) return;
+  if ((!TOPIC.audio && !(R && R.mode === 'boss')) || profile.audioOff || ui.screen !== 'round' || !R) return;
   const q = R.queue[R.i];
   if (!q || !q.fb || q.fb.kind !== 'good') return;
   const f = FB_OK[Math.floor(Math.random() * FB_OK.length)];
@@ -1366,12 +1479,12 @@ function render(mode) {
   document.documentElement.style.setProperty('--realm', ui.screen === 'world' || !REALM ? '#c9a24a' : REALM.color);
   const cls = mode === 'keep' ? ' noanim' : mode === 'fb' ? ' fbmode' : ' enter';
   ui.anim = cls === ' enter';
-  const html = ui.screen === 'world' ? viewWorld() : ui.screen === 'home' ? viewHome() : ui.screen === 'round' ? viewRound() : ui.screen === 'summary' ? viewSummary()
+  const html = ui.screen === 'world' ? viewWorld() : ui.screen === 'boss' ? viewBoss() : ui.screen === 'bosssum' ? viewBossSummary() : ui.screen === 'home' ? viewHome() : ui.screen === 'round' ? viewRound() : ui.screen === 'summary' ? viewSummary()
     : ui.screen === 'lesson' ? viewLesson() : ui.screen === 'qr' ? viewQr() : ui.screen === 'trophies' ? viewTrophies() : viewLessonDone();
   app.innerHTML = `<div class="view${cls}">${html}</div>`;
   afterRender();
   if (mode === 'fb') {
-    if (TOPIC.audio) audioPraise();
+    if (TOPIC.audio || (R && R.mode === 'boss')) audioPraise();
     const el = document.querySelector('[data-act="next"]') || document.querySelector('.fb');
     if (el && el.scrollIntoView) el.scrollIntoView({ block: 'end', behavior: 'smooth' });
     return;
@@ -1396,6 +1509,8 @@ function onAct(b) {
   if (a === 'tomygrp') { scrollMyGrp(); return; }
   if (a === 'world') goWorld();
   else if (a === 'realm') enterRealm(b.dataset.id);
+  else if (a === 'boss') openBoss(b.dataset.g);
+  else if (a === 'bossgo') startBoss(ui.boss);
   else if (a === 'goquest') { enterRealm(b.dataset.id); startLesson(b.dataset.st); }
   else if (a === 'start') startRound(b.dataset.st);
   else if (a === 'review') startRound('review');
@@ -1442,7 +1557,7 @@ function onAct(b) {
   else if (a === 'next') nextQ();
   else if (a === 'home') { ui.screen = 'home'; ui.formulas = false; render(); }
   else if (a === 'trophies') { checkTrophies(); TROPHIES.forEach(t => { if (state.trophies[t.id]) state.trophySeen[t.id] = true; }); save(); ui.screen = 'trophies'; render(); }
-  else if (a === 'quit') { ui.screen = 'home'; ui.formulas = false; R = null; render(); }
+  else if (a === 'quit') { if (R && R.mode === 'boss') { R = null; openBoss(ui.boss, false); return; } ui.screen = 'home'; ui.formulas = false; R = null; render(); }
   else if (a === 'formulas') {
     if (R && ui.screen === 'round') { const el = $id('ans'); if (el) R.queue[R.i].input = el.value; }
     ui.formulas = !ui.formulas; render('keep');
@@ -1495,6 +1610,8 @@ beInit();
 // Adressen: #reich-<id> öffnet ein Reich, #reich-<id>/learn-<Quest> direkt die Schriftrolle.
 function route() {
   const h = String(location.hash || '');
+  const mb = /^#boss-([789])$/.exec(h);
+  if (mb) { openBoss(mb[1], false); return; }
   let m = /^#reich-([a-z0-9-]+)(?:\/learn-([a-z0-9]+))?$/.exec(h);
   if (m && REALMS.some(r => r.id === m[1])) {
     enterRealm(m[1], false);

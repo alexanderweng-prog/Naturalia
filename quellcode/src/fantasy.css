@@ -247,3 +247,21 @@ a { color: var(--accent-text); }
 .mn-label b { font-size: .72rem; }
 @media (min-width: 560px) { .mn-label b { font-size: .82rem; } }
 @media (max-width: 380px) { .mn-label b { font-size: .64rem; } }
+
+/* Endgegner */
+.mapnode.boss .mn-icon { width: 66px; height: 66px; font-size: 2.1rem; border-radius: 18px; box-shadow: 0 3px 0 #3b2a17, 0 0 0 4px color-mix(in srgb, var(--rc) 45%, transparent), 0 0 18px color-mix(in srgb, var(--rc) 60%, transparent); }
+.mapnode.boss .mn-label { border-color: var(--rc); }
+.bosscard { margin-top: var(--space-3); border-top: 6px solid var(--sc); }
+.bc-head { display: flex; gap: var(--space-3); align-items: center; margin-bottom: var(--space-2); }
+.bc-icon { font-size: 2.2rem; line-height: 1; }
+.bossbig { font-size: 4.2rem; line-height: 1; text-align: center; margin: var(--space-2) 0 var(--space-3); filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .25)); }
+.bossbig.beaten { filter: grayscale(.8) drop-shadow(0 4px 0 rgba(0, 0, 0, .25)); transform: rotate(-12deg); }
+.bossrules { margin: var(--space-3) 0; padding-left: 1.2em; }
+.bossrules li { margin: 4px 0; }
+.bossbar { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-2) 0 var(--space-3); }
+.bb-icon { font-size: 1.6rem; line-height: 1; }
+.bb-track { flex: 1; height: 14px; border: 2px solid var(--line); border-radius: 99px; overflow: hidden; background: var(--surface); }
+.bb-track > div { height: 100%; background: linear-gradient(90deg, #b7322c, #e8577a); transition: width .4s ease; }
+.bossrows { list-style: none; padding: 0; margin: var(--space-2) 0 0; }
+.bossrow { display: grid; grid-template-columns: 1fr auto auto; gap: 4px var(--space-3); align-items: center; padding: var(--space-2) 0; border-top: 1px solid var(--line-soft); }
+.bossrow small { grid-column: 1 / -1; color: var(--muted); }

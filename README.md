@@ -9,6 +9,7 @@ Naturalia als Spiel, mit allen 20 Kapiteln der NuT Lernlandkarte als Reiche, daz
 - **Vorlesen:** Jede Schriftrolle hat «Vorlesen» mit den Sprachclips aus `audio/`. Bei richtigen Antworten kommt ein gesprochenes Lob. «Ton an/aus» gilt für alle Reiche. Leistung und Motor haben keine Sprachclips, dort liest die Browser-Stimme vor.
 - **Weltkarte:** Ein langer Weg von Kapitel 7 über 8 und 9 zu den Vertiefungen.
 - **Stufenwahl:** Beim ersten Besuch fragt die App nach der Klasse (7, 8, 9 oder alle). Die Reiche der eigenen Stufe leuchten, die anderen sind gedimmt, bleiben aber offen. Die Vertiefungen gelten ab der 8. Klasse. Die Klasse lässt sich unten auf der Weltkarte ändern.
+- **Endgegner:** Am Ende jeder Stufe wartet ein Endgegner (7: Nebelgolem, 8: Sturmhydra, 9: Schattenkraken). Der Kampf besteht aus 12 gemischten Fragen aus allen Reichen der Stufe, mit einem Versuch pro Frage und ohne Zauberbuch. Ab 9 richtigen Antworten ist er besiegt. Danach zeigt die Auswertung pro Reich, was nochmals geübt werden sollte. Der Kampf verändert die Lernkartei der Reiche nicht, die XP zählen für den Heldenrang. Direkter Link für die Klasse: `…/Naturalia/#boss-8`. Anzahl Fragen und Siegesgrenze stehen in `quellcode/src/realms.js` (`BOSS_Q`, `BOSS_WIN`).
 - **Titelschrift:** Cinzel (SIL Open Font License, `fonts/OFL-Cinzel.txt`).
 - **Heldenränge** sind an die grössere Welt angepasst (höchster Rang bei 9000 XP).
 - `pruefen.html` kennt alle Reiche.
