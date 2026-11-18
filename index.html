@@ -12759,7 +12759,7 @@ function loadChapter(id) {
   WATTI_TIPS = (REALM.tips || []).concat(TOPIC.tips || [], BASE_TIPS);
   tipI = 0;
   state = load();
-  // Ein Heldenname und eine Gilde für alle Reiche
+  // Ein Spielername und eine Gilde für alle Reiche
   state.nick = profile.nick;
   state.realName = profile.realName;
   state.introDone = state.introDone || profile.introDone;
@@ -13278,7 +13278,7 @@ function schoolHtml() {
     return gap + `<li class="${r.is_me ? 'me' : ''}"><span class="rk mono">${r.rank}</span><span class="nm">${esc(r.nick)}${r.is_me ? ' (du)' : ''}<small>${esc(r.class_code)}</small></span><span class="mono">${r.week_xp} XP</span></li>`;
   }).join('');
   const me = rows.find(r => r.is_me);
-  return `<ol class="board">${li}</ol><p class="small">${me ? `Du bist Platz ${me.rank} von ${n}. ` : ''}Schulinterne Wertung: Top 10 und dein Platz. Gezeigt werden nur Heldennamen und der Klassencode.</p>`;
+  return `<ol class="board">${li}</ol><p class="small">${me ? `Du bist Platz ${me.rank} von ${n}. ` : ''}Schulinterne Wertung: Top 10 und dein Platz. Gezeigt werden nur Spielernamen und der Klassencode.</p>`;
 }
 function classesHtml() {
   const rows = BE.classes;
@@ -13951,7 +13951,7 @@ function viewHome() {
       <div class="ansrow chrow"><input id="chcode" class="numin mono" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="z. B. 4-DRACHE" value="${esc(ui.chCode || '')}" aria-label="Challenge-Code"><button class="btn" data-act="rcode">Zufall</button></div>
       ${ui.chErr ? `<p class="errtxt" role="alert">${ui.chErr}</p>` : ''}
       <button class="btn btn-primary block" data-act="challenge"><span aria-hidden="true">⚔️</span> Duell beginnen</button>
-      <p class="small nickrow">Dein Heldenname: <span class="mono b">${esc(state.nick)}</span> <button class="btn sm" data-act="nick">Neu würfeln</button></p>
+      <p class="small nickrow">Dein Spielername: <span class="mono b">${esc(state.nick)}</span> <button class="btn sm" data-act="renameworld">Ändern</button></p>
       ${chKeys.length ? `<ul class="chlist">${chKeys.map(k => `<li><span class="mono">${esc(k)}</span>: ${state.challenges[k].c} von 6 in ${state.challenges[k].t} s</li>`).join('')}</ul>` : ''}
     </article>`;
 
@@ -13982,7 +13982,7 @@ function viewHome() {
     <div class="path questpath">${cards}${rev}${classCard()}${qrCard()}${chal}</div>
     <footer class="foot">
       <p class="small"><button class="linkbtn" data-act="world">Zur Weltkarte</button>${nextRealmLink()}</p>
-      <p class="small">Dein Fortschritt wird nur auf diesem Gerät im Browser gespeichert${memoryOnly ? ' (Speichern ist hier gerade nicht möglich, der Fortschritt geht beim Schliessen verloren)' : ''}. Der Heldenname ist nirgends sonst hinterlegt.</p>
+      <p class="small">Dein Fortschritt wird nur auf diesem Gerät im Browser gespeichert${memoryOnly ? ' (Speichern ist hier gerade nicht möglich, der Fortschritt geht beim Schliessen verloren)' : ''}. Sichere ihn auf der Weltkarte unter «Spielstand sichern».</p>
       <button class="btn sm" data-act="reset">${ui.confirmReset ? 'Sicher? Nochmals tippen zum Löschen' : 'Fortschritt in diesem Reich zurücksetzen'}</button>
     </footer>
   </main>`;
@@ -14346,7 +14346,7 @@ function onAct(b) {
     for (let i = 0; i < 4; i++) c += ch[Math.floor(Math.random() * ch.length)];
     ui.chCode = c; ui.chErr = ''; render('keep');
   }
-  else if (a === 'nick') { state.nick = profile.nick = newNick(); save(); saveProfile(); render('keep'); }
+  else if (a === 'renameworld') { goWorld(); ui.renaming = true; ui.pname = null; ui.nameErr = ''; render(); setTimeout(() => { const el = $id('pname'); if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); } }, 60); }
   else if (a === 'copy') {
     const line = R && R.summary && R.summary.ch ? R.summary.ch.line : '';
     const say = ok => { const el = $id('copymsg'); if (el) el.textContent = ok ? 'Kopiert.' : 'Markiere den Text und kopiere ihn von Hand.'; };
