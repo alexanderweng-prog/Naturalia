@@ -275,3 +275,10 @@ a { color: var(--accent-text); }
 .saveload > summary { cursor: pointer; margin-bottom: var(--space-2); }
 .savecard .btn, .savecode { box-sizing: border-box; max-width: 100%; }
 .savecard label.btn { display: flex; justify-content: center; align-items: center; text-align: center; }
+
+/* Spielername */
+.namecard h3 { margin: 0 0 var(--space-2); }
+.namerow { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
+.namerow .txtin { flex: 1; min-width: 0; box-sizing: border-box; }
+.namecard .errtxt { margin: var(--space-2) 0 0; }
+.worldmain > .namecard + .savecard { margin-top: var(--space-4); }

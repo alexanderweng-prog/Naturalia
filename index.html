@@ -1079,6 +1079,13 @@ a { color: var(--accent-text); }
 .savecard .btn, .savecode { box-sizing: border-box; max-width: 100%; }
 .savecard label.btn { display: flex; justify-content: center; align-items: center; text-align: center; }
 
+/* Spielername */
+.namecard h3 { margin: 0 0 var(--space-2); }
+.namerow { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
+.namerow .txtin { flex: 1; min-width: 0; box-sizing: border-box; }
+.namecard .errtxt { margin: var(--space-2) 0 0; }
+.worldmain > .namecard + .savecard { margin-top: var(--space-4); }
+
 </style>
 </head>
 <body>
@@ -12724,7 +12731,7 @@ const PROFILE_KEY = 'halingen-naturalia-profil-v1';
 let profile = (() => {
   let p = null;
   try { const raw = window.localStorage.getItem(PROFILE_KEY); if (raw) p = JSON.parse(raw); } catch (e) { /* ohne Speicher */ }
-  p = Object.assign({ nick: '', classCode: '', realName: '', introDone: false, worldTrophies: {}, grade: null }, p || {});
+  p = Object.assign({ nick: '', classCode: '', realName: '', introDone: false, worldTrophies: {}, grade: null, named: false }, p || {});
   if (!p.nick || !p.classCode) {
     // Bestehender Fortschritt aus den alten Einzel-Apps: Name und Klasse übernehmen
     REALMS.forEach(r => {
@@ -13505,6 +13512,32 @@ const SAGAS = [
   { id: 'bezwinger', icon: '\u{2694}️', name: 'Bezwinger', how: 'Besiege einen Endgegner.', ok: t => t.bosses >= 1 },
   { id: 'hort', icon: '\u{1F4B0}', name: 'Drachenhort', how: 'Finde 30 Artefakte in den Reichen.', ok: t => t.tr >= 30 }
 ];
+/* ---------- Spielername: muss beim ersten Start gewählt werden, gehört zum Spielstand ---------- */
+function cleanName(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
+function nameError(s) {
+  const n = cleanName(s);
+  if (n.length < 2) return 'Der Name braucht mindestens 2 Zeichen.';
+  if (n.length > 20) return 'Höchstens 20 Zeichen.';
+  if (!/^[\p{L}\p{N} ._-]+$/u.test(n)) return 'Erlaubt sind Buchstaben, Zahlen, Leerzeichen, Punkt und Bindestrich.';
+  return '';
+}
+function setPlayerName(s) {
+  const err = nameError(s);
+  if (err) { ui.nameErr = err; render('keep'); const el = $id('pname'); if (el) el.focus(); return; }
+  profile.nick = cleanName(s); profile.named = true; saveProfile();
+  if (KEY) { state.nick = profile.nick; save(); }
+  ui.nameErr = ''; ui.pname = null; ui.renaming = false;
+  render();
+}
+function nameCard(first) {
+  const val = ui.pname !== null && ui.pname !== undefined ? ui.pname : (first ? '' : profile.nick);
+  return `<section class="card namecard"><h3>${first ? 'Wie heisst du im Spiel?' : 'Spielername ändern'}</h3>
+    <p class="small">${first ? 'Wähle einen Spielernamen. Das darf dein Vorname oder ein Fantasiename sein. Er steht in deinem Spielstand, darum merke ihn dir gut.' : 'Der neue Name gilt in allen Reichen und in deinem Spielstand.'}</p>
+    <label class="sr" for="pname">Spielername</label>
+    <div class="namerow"><input id="pname" class="numin txtin" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" maxlength="20" placeholder="z. B. Mia" value="${esc(val)}"><button class="btn" data-act="pnamerand" title="Zufälligen Fantasienamen vorschlagen">\u{1F3B2} Zufall</button></div>
+    ${ui.nameErr ? `<p class="errtxt" role="alert">${esc(ui.nameErr)}</p>` : ''}
+    <div class="savebtns"><button class="btn btn-primary" data-act="pnameok">${first ? 'Los geht’s' : 'Speichern'}</button>${first ? '' : '<button class="btn" data-act="pnamecancel">Abbrechen</button>'}</div></section>`;
+}
 const GRADES = ['7', '8', '9'];
 // Gehört ein Reich zur gewählten Stufe? Vertiefungen (Leistung, Motor) gelten ab der 8. Klasse.
 function mine(r) {
@@ -13598,12 +13631,23 @@ function viewWorld() {
   const fog = FOG_REALMS.map(f => `<li><span class="mono">${f[0].replace('_', '.')}</span> ${esc(f[1])}</li>`).join('');
   const initW = ui.anim ? 0 : pct;
   const myQ = per.filter(x => mine(x.r)).reduce((a, x) => ({ passed: a.passed + x.st.passed, all: a.all + x.st.stations.length }), { passed: 0, all: 0 });
+  if (!profile.named) return `
+  <header class="top worldtop">
+    ${skyHtml()}
+    <div class="topbar"><span class="tag inv">Natur und Technik · Lernwelt</span></div>
+    <div class="hero"><div class="herotxt"><div class="sigil" aria-hidden="true">\u{1F3F0}</div><h1>Naturalia</h1><p class="lead">${REALMS.length} Reiche voller Rätsel aus Natur und Technik. Watti, dein Zaubertrank, begleitet dich und liest dir die Schriftrollen vor.</p></div>
+      <button class="wbtn" data-act="poke" aria-label="Watti anstupsen">${watti(30, 'happy', 'big')}</button></div>
+  </header>
+  <main class="wrap worldmain">
+    ${nameCard(true)}
+    ${saveCardHtml(true)}
+  </main>`;
   return `
   <header class="top worldtop">
     ${skyHtml()}
     <div class="topbar">
       <span class="tag inv">Natur und Technik · Lernwelt</span>
-      <span class="tag inv">${esc(profile.nick)}</span>
+      <span class="tag inv">\u{1F464} ${esc(profile.nick)}</span>
     </div>
     <div class="hero"><div class="herotxt"><div class="sigil" aria-hidden="true">\u{1F3F0}</div><h1>Naturalia</h1><p class="lead">${REALMS.length} Reiche voller Rätsel aus Natur und Technik. Wähle ein Reich, lies die Schriftrollen und bestehe die Quests. Watti, dein Zaubertrank, begleitet dich und liest dir die Schriftrollen vor.</p><p class="bubble" id="bubble" aria-live="polite"></p></div>
       <button class="wbtn" data-act="poke" aria-label="Watti anstupsen">${watti(Math.max(14, tot.all ? tot.passed / tot.all * 100 : 0), 'happy', 'big')}</button></div>
@@ -13628,16 +13672,18 @@ function viewWorld() {
     <div class="tgrid">${sagas}</div>
     ${FOG_REALMS.length ? `<details class="card fogcard"><summary><b>Nebelreiche</b> <span class="small">· noch unerforscht (${FOG_REALMS.length})</span></summary>
       <p class="small">Diese Kapitel haben noch keine Lern-App. Sobald eine entsteht, lichtet sich der Nebel.</p><ul class="foglist">${fog}</ul></details>` : ''}
+    ${ui.renaming ? nameCard(false) : `<section class="card namecard"><h3>Spielername</h3><p class="small"><b>${esc(profile.nick)}</b> \u00B7 gehört zu deinem Spielstand.</p><button class="btn" data-act="pnameedit">Namen ändern</button></section>`}
     ${profile.grade !== null ? gradeCard() : ''}
     ${saveCardHtml()}
     <footer class="foot">
       <div class="logochip"><img src="logo.png" alt="Sekundarschule Halingen"></div>
-      <p class="small">Dein Fortschritt wird nur auf diesem Gerät im Browser gespeichert. Dein Heldenname <b class="mono">${esc(profile.nick)}</b> gilt in allen Reichen.</p>
+      <p class="small">Dein Fortschritt wird nur auf diesem Gerät im Browser gespeichert. Dein Spielername <b class="mono">${esc(profile.nick)}</b> gilt in allen Reichen.</p>
     </footer>
   </main>`;
 }
 function enterRealm(id, push) {
   audioStop();
+  if (!profile.named) { goWorld(); return; }
   if (!REALMS.some(r => r.id === id)) return;
   loadChapter(id);
   ui.screen = 'home'; ui.formulas = false; ui.confirmReset = false; ui.chErr = ''; ui.clsErr = ''; ui.bt = 'class';
@@ -13667,6 +13713,7 @@ function buildBoss(g) {
 }
 function openBoss(g, push) {
   if (!BOSSES[g]) return;
+  if (!profile.named) { goWorld(); return; }
   audioStop();
   ui.boss = g; ui.screen = 'boss'; R = null; L = null;
   if (push !== false) { try { history.pushState({ boss: g }, '', '#boss-' + g); } catch (e) { /* ohne Verlauf */ } }
@@ -13780,6 +13827,7 @@ async function readSaveCode(code) {
   const prof = data[PROFILE_KEY] || {};
   const realms = REALMS.filter(r => data[r.storeKey]);
   const xp = realms.reduce((a, r) => a + (+data[r.storeKey].xp || 0), 0) + (+prof.bossXp || 0);
+  if (prof.nick && prof.named === undefined) prof.named = true;
   return { data, at: obj.at, nick: prof.nick || '?', xp, realms: realms.length };
 }
 function applySave(info) {
@@ -13789,21 +13837,21 @@ function applySave(info) {
   } catch (e) { ui.saveMsg = 'Speichern im Browser ist hier nicht möglich.'; render('keep'); return; }
   location.hash = ''; location.reload();
 }
-function saveCardHtml() {
+function saveCardHtml(loadOnly) {
   const sv = ui.save || {};
-  const prev = sv.pending ? `<div class="fb warn"><div class="fbt">Spielstand von ${esc(sv.pending.nick)} laden?</div>
-      <div class="fbb">${sv.pending.xp} XP in ${sv.pending.realms} ${sv.pending.realms === 1 ? 'Reich' : 'Reichen'}${sv.pending.at ? ', gesichert am ' + new Date(sv.pending.at).toLocaleDateString('de-CH') : ''}. Dein jetziger Fortschritt auf diesem Gerät wird dabei ersetzt.</div>
+  const prev = sv.pending ? `<div class="fb warn"><div class="fbt">Spielstand von \u{1F464} ${esc(sv.pending.nick)} laden?</div>
+      <div class="fbb">${sv.pending.xp} XP in ${sv.pending.realms} ${sv.pending.realms === 1 ? 'Reich' : 'Reichen'}${sv.pending.at ? ', gesichert am ' + new Date(sv.pending.at).toLocaleDateString('de-CH') : ''}. ${profile.named && profile.nick !== sv.pending.nick ? 'Danach heisst du wieder ' + esc(sv.pending.nick) + '. ' : ''}Dein jetziger Fortschritt auf diesem Gerät wird dabei ersetzt.</div>
       <div class="savebtns"><button class="btn btn-primary" data-act="saveapply">Ja, laden</button><button class="btn" data-act="savecancel">Abbrechen</button></div></div>` : '';
-  return `<section class="card savecard"><h3>Spielstand sichern</h3>
-    <p class="small">Dein Fortschritt liegt nur in diesem Browser. Sichere ihn, damit du auf einem anderen Gerät oder nach dem Löschen des Browsers weiterspielen kannst. Eine Anmeldung braucht es nicht.</p>
-    <div class="savebtns"><button class="btn btn-primary" data-act="savefile">Als Datei speichern</button><button class="btn" data-act="savecopy">Code kopieren</button></div>
+  return `<section class="card savecard"><h3>${loadOnly ? 'Spielstand laden' : 'Spielstand sichern'}</h3>
+    ${loadOnly ? '' : `<p class="small">Dein Fortschritt liegt nur in diesem Browser. Sichere ihn, damit du auf einem anderen Gerät oder nach dem Löschen des Browsers weiterspielen kannst. Im Spielstand steckt auch dein Spielername <b>${esc(profile.nick)}</b>. Eine Anmeldung braucht es nicht.</p>
+    <div class="savebtns"><button class="btn btn-primary" data-act="savefile">Als Datei speichern</button><button class="btn" data-act="savecopy">Code kopieren</button></div>`}
     ${sv.code ? `<label class="small" for="savecode">Dein Code (${sv.code.length} Zeichen). Schick ihn dir zum Beispiel per Mail oder speichere ihn in einer Notiz:</label><textarea id="savecode" class="savecode mono" readonly rows="3">${esc(sv.code)}</textarea>` : ''}
-    <details class="saveload"${sv.open ? ' open' : ''}><summary><b>Spielstand laden</b></summary>
-      <p class="small">Wähle deine Spielstand-Datei oder füge den Code ein.</p>
+    ${loadOnly ? '<div class="saveload">' : `<details class="saveload"${sv.open ? ' open' : ''}><summary><b>Spielstand laden</b></summary>`}
+      <p class="small">${loadOnly ? 'Du hast schon einmal gespielt? Wähle deine Spielstand-Datei oder füge den Code ein. Dein Spielername ist darin enthalten.' : 'Wähle deine Spielstand-Datei oder füge den Code ein.'}</p>
       <label class="btn block" for="loadfile">Datei wählen</label><input type="file" id="loadfile" accept=".txt,text/plain" hidden>
       <textarea id="loadcode" class="savecode mono" rows="3" placeholder="NATURALIA1:…">${esc(sv.input || '')}</textarea>
       <button class="btn block" data-act="saveread">Code prüfen</button>
-    </details>
+    ${loadOnly ? '</div>' : '</details>'}
     <p class="small" id="savemsg" aria-live="polite">${esc(ui.saveMsg || '')}</p>
     ${prev}</section>`;
 }
@@ -14274,6 +14322,10 @@ function onAct(b) {
   audioStop();
   if (a === 'grade') { profile.grade = b.dataset.g; saveProfile(); render('keep'); if (profile.grade) setTimeout(scrollMyGrp, 60); return; }
   if (a === 'tomygrp') { scrollMyGrp(); return; }
+  if (a === 'pnameok') { const el = $id('pname'); setPlayerName(el ? el.value : ''); return; }
+  if (a === 'pnamerand') { ui.pname = newNick(); ui.nameErr = ''; render('keep'); return; }
+  if (a === 'pnameedit') { ui.renaming = true; ui.pname = null; ui.nameErr = ''; render('keep'); const el = $id('pname'); if (el) el.focus(); return; }
+  if (a === 'pnamecancel') { ui.renaming = false; ui.pname = null; ui.nameErr = ''; render('keep'); return; }
   if (/^save/.test(a)) { saveAction(a); return; }
   if (a === 'world') goWorld();
   else if (a === 'realm') enterRealm(b.dataset.id);
@@ -14362,12 +14414,14 @@ document.addEventListener('click', e => {
 document.addEventListener('input', e => {
   if (!e.target) return;
   if (e.target.id === 'chcode') ui.chCode = e.target.value;
+  else if (e.target.id === 'pname') { ui.pname = e.target.value; }
   else if (e.target.id === 'loadcode') { ui.save = ui.save || {}; ui.save.input = e.target.value; }
   else if (e.target.id === 'realname') { state.realName = profile.realName = e.target.value.slice(0, 30); save(); saveProfile(); }
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter' || !e.target) return;
   if (e.target.id === 'ans') { e.preventDefault(); checkNum(); }
+  else if (e.target.id === 'pname') { e.preventDefault(); setPlayerName(e.target.value); }
   else if (e.target.id === 'chcode') { e.preventDefault(); startChallenge(); }
   else if (e.target.id === 'clscode') { e.preventDefault(); joinClass(); }
 });

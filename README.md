@@ -18,6 +18,8 @@ Naturalia als eigenständiges Spiel mit allen 20 Kapiteln aus Natur und Technik 
 
 Der Fortschritt wird im Browser gespeichert (Schlüssel `halingen-nt7-5-v1` usw.).
 
+**Spielername:** Beim ersten Start müssen die Schüler*innen einen Spielernamen wählen (2–20 Zeichen, Vorname oder Fantasiename, auf Wunsch per Zufall). Ohne Namen geht es nicht auf die Karte, auch nicht über Direktlinks. Der Name gehört zum Spielstand und lässt sich unten auf der Weltkarte ändern. Wer schon einen Spielstand hat, kann ihn direkt im Startbildschirm laden und bekommt damit auch seinen Namen zurück.
+
 **Spielstand sichern:** Unten auf der Weltkarte können die Schüler*innen ihren Spielstand als Datei (`naturalia-<Heldenname>-<Datum>.txt`) speichern oder als Code kopieren. Mit «Spielstand laden» (Datei wählen oder Code einfügen) geht es auf einem anderen Gerät weiter. Vor dem Laden zeigt die App, wessen Stand es ist, und fragt nach, weil der Fortschritt auf dem Gerät ersetzt wird. Der Code ist komprimiert, aber zum Abtippen zu lang: etwa 200 bis 900 Zeichen nach einigen Runden, bis rund 7700 Zeichen, wenn alle Reiche komplett gespielt sind. Gedacht ist er zum Kopieren und Einfügen, zum Beispiel per Mail an sich selbst. Er ist nicht verschlüsselt, nur komprimiert.
 
 ## Ändern und neu bauen
